@@ -62,10 +62,9 @@ func TestPutArtifactType(t *testing.T) {
 	}
 	t.Logf("Should PutArtifactType: %v", response)
 
-	if *response.TypeId > 0 {
-		t.Logf("Should PutArtifactTypeResponse.TypeId an ID > 0: %v", response)
-	} else {
-		t.Errorf("Should PutArtifactTypeResponse.TypeId an ID > 0: %v", response)
+	t.Logf("Should PutArtifactTypeResponse.TypeId an ID > 0: %v", response)
+	if *response.TypeId <= 0 {
+		t.Fail()
 	}
 }
 
