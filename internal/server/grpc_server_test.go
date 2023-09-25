@@ -93,6 +93,6 @@ func TestPutArtifactTypeNoNameFailure(t *testing.T) {
 	if err != nil {
 		t.Logf("Should error on PutArtifactType with Request missing Name: %v", err)
 	} else {
-		t.Errorf("Should error on PutArtifactType with Request missing Name: %v, %v", response, err)
+		t.Errorf("Should error on PutArtifactType with Request missing Name: %v", response)
 	}
 }
