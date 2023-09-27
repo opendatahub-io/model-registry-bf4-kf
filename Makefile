@@ -8,8 +8,14 @@ PATH := $(PROJECT_BIN):$(PATH)
 model-registry: build
 
 internal/ml_metadata/proto/%.pb.go: api/grpc/ml_metadata/proto/%.proto
-	protoc -I./api/grpc --go_out=./internal --go_opt=paths=source_relative \
-		--go-grpc_out=./internal --go-grpc_opt=paths=source_relative $<
+	protoc -I./api/grpc \
+		--go_out=./internal --go_opt=paths=source_relative \
+		--go-grpc_out=./internal --go-grpc_opt=paths=source_relative \
+		--grpc-gateway_out=./internal --grpc-gateway_opt logtostderr=true \
+		--grpc-gateway_opt paths=source_relative --grpc-gateway_opt generate_unbound_methods=true \
+		--openapiv2_out ./api/gen/openapiv2 --openapiv2_opt logtostderr=true --openapiv2_opt json_names_for_fields=false \
+		--openapiv2_opt generate_unbound_methods=true --openapiv2_opt output_format=yaml \
+		--openapiv2_opt preserve_rpc_order=true $<
 
 .PHONY: gen/grpc
 gen/grpc: internal/ml_metadata/proto/metadata_store.pb.go internal/ml_metadata/proto/metadata_store_service.pb.go
@@ -26,7 +32,7 @@ vet:
 
 .PHONY: clean
 clean:
-	rm -Rf ./model-registry internal/ml_metadata/proto/*.go internal/model/graph/models_gen.go
+	rm -Rf ./model-registry internal/ml_metadata/proto/*.go internal/model/graph/models_gen.go api/gen/openapiv2/ml_metadata/proto/*.yaml
 
 .PHONY: deps
 deps:
@@ -35,6 +41,8 @@ deps:
 	GOBIN=$(PROJECT_BIN) go install github.com/searKing/golang/tools/go-enum@v1.2.97
 	GOBIN=$(PROJECT_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31.0
 	GOBIN=$(PROJECT_BIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+	GOBIN=$(PROJECT_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.18.0
+	GOBIN=$(PROJECT_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.18.0
 
 .PHONY: vendor
 vendor:
@@ -66,6 +74,10 @@ run/server: gen metadata.sqlite.db
 .PHONY: run/client
 run/client: gen
 	python test/python/test_mlmetadata.py
+
+.PHONY: run/gateway
+run/gateway:
+	go run main.go gateway --logtostderr=true
 
 .PHONY: serve
 serve: build

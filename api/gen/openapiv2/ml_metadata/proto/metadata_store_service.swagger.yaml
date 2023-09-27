@@ -1,0 +1,4205 @@
+swagger: "2.0"
+info:
+  title: ml_metadata/proto/metadata_store_service.proto
+  version: version not set
+tags:
+  - name: MetadataStoreService
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /ml_metadata.MetadataStoreService/PutArtifactType:
+    post:
+      summary: Inserts or updates an ArtifactType.
+      description: |-
+        A type has a set of strong typed properties describing the schema of any
+        stored instance associated with that type. A type is identified by a name
+        and an optional version.
+
+        Type Creation:
+        If no type exists in the database with the given identifier
+        (name, version), it creates a new type and returns the type_id.
+
+        Type Evolution:
+        If the request type with the same (name, version) already exists
+        (let's call it stored_type), the method enforces the stored_type can be
+        updated only when the request type is backward compatible for the already
+        stored instances.
+
+        Backwards compatibility is violated iff:
+
+          a) there is a property where the request type and stored_type have
+             different value type (e.g., int vs. string)
+          b) `can_add_fields = false` and the request type has a new property that
+             is not stored.
+          c) `can_omit_fields = false` and stored_type has an existing property
+             that is not provided in the request type.
+
+        If non-backward type change is required in the application, e.g.,
+        deprecate properties, re-purpose property name, change value types,
+        a new type can be created with a different (name, version) identifier.
+        Note the type version is optional, and a version value with empty string
+        is treated as unset.
+
+        Args:
+          artifact_type: the type to be inserted or updated.
+          can_add_fields:
+            when set to true, new properties can be added;
+            when set to false, returns ALREADY_EXISTS if the request type has
+            properties that are not in stored_type.
+          can_omit_fields:
+            when set to true, stored properties can be omitted in the request type;
+            when set to false, returns ALREADY_EXISTS if the stored_type has
+            properties not in the request type.
+
+        Returns:
+          The type_id of the stored type.
+
+        Raises:
+          ALREADY_EXISTS error in the case listed above.
+          INVALID_ARGUMENT error, if the given type has no name, or any
+            property value type is unknown.
+      operationId: MetadataStoreService_PutArtifactType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutArtifactTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutArtifactTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutExecutionType:
+    post:
+      summary: |-
+        Inserts or updates an ExecutionType. Please refer to PutArtifactType for
+        type upsert API description.
+      operationId: MetadataStoreService_PutExecutionType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutContextType:
+    post:
+      summary: |-
+        Inserts or updates an ContextType. Please refer to PutArtifactType for
+        type upsert API description.
+      operationId: MetadataStoreService_PutContextType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutContextTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutContextTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutTypes:
+    post:
+      summary: Bulk inserts types atomically.
+      operationId: MetadataStoreService_PutTypes
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutTypesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutTypesRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutArtifacts:
+    post:
+      summary: Inserts or updates artifacts in the database.
+      description: |-
+        If an artifact_id is specified for an artifact, it is an update.
+        If an artifact_id is unspecified, it will insert a new artifact.
+        For new artifacts, type must be specified.
+        For old artifacts, type must be unchanged or unspecified.
+
+        It is not guaranteed that the created or updated artifacts will share the
+        same `create_time_since_epoch` or `last_update_time_since_epoch`
+        timestamps.
+
+        Args:
+          artifacts: A list of artifacts to insert or update.
+
+        Returns:
+          A list of artifact ids index-aligned with the input.
+      operationId: MetadataStoreService_PutArtifacts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutArtifactsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutArtifactsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutExecutions:
+    post:
+      summary: Inserts or updates executions in the database.
+      description: |-
+        If an execution_id is specified for an execution, it is an update.
+        If an execution_id is unspecified, it will insert a new execution.
+        For new executions, type must be specified.
+        For old executions, type must be unchanged or unspecified.
+
+        It is not guaranteed that the created or updated executions will share the
+        same `create_time_since_epoch` or `last_update_time_since_epoch`
+        timestamps.
+
+        Args:
+          executions: A list of executions to insert or update.
+
+        Returns:
+          A list of execution ids index-aligned with the input.
+      operationId: MetadataStoreService_PutExecutions
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutEvents:
+    post:
+      summary: Inserts events in the database.
+      description: |-
+        The execution_id and artifact_id must already exist.
+        Once created, events cannot be modified.
+        AlreadyExists error will be raised if duplicated events are found.
+
+        It is not guaranteed that the created or updated events will share the
+        same `milliseconds_since_epoch` timestamps.
+
+        Args:
+          events: A list of events to insert or update.
+      operationId: MetadataStoreService_PutEvents
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutEventsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutEventsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutExecution:
+    post:
+      summary: |-
+        Inserts or updates an Execution and its input and output artifacts and
+        related contexts atomically. The `artifact_event_pairs` include the state
+        changes of the Artifacts used or generated by the Execution, as well as the
+        input/output Event. The `contexts` describe the associations of the
+        execution and the attributions of the artifacts.
+      description: |-
+        If an execution_id is specified, it is an update on the corresponding
+        execution, otherwise it does an insertion.
+        For insertion, type must be specified. Same rule applies to artifacts
+        and contexts in the request. Corresponding errors may raised. For example:
+        AlreadyExists error will be raised if duplicated executions, artifacts
+        or events are found.
+
+        It is not guaranteed that the created or updated executions, artifacts,
+        contexts and events will share the same `create_time_since_epoch`,
+        `last_update_time_since_epoch`, or `milliseconds_since_epoch` timestamps.
+
+        Args:
+          execution: An execution to insert or update.
+          artifact_event_pairs: Artifacts to insert or update and events to insert.
+          contexts: The contexts that the execution and the artifacts belong to.
+
+        Returns:
+          An execution id and a list of artifacts and contexts ids index-aligned
+          with the input.
+      operationId: MetadataStoreService_PutExecution
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutExecutionRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutLineageSubgraph:
+    post:
+      summary: |-
+        Inserts or updates a lineage subgraph (i.e. a collection of event edges
+        and its executions, artifacts, and related contexts) atomically. The
+        `event_edges` include an Event and the indices of the corresponding
+        execution and artifact from the input list of executions and artifacts. The
+        `contexts` describe the associations of the Execution and the attributions
+        of the Artifact.
+      description: |-
+        If an execution_id is specified, it is an update on the corresponding
+        Execution, otherwise it does an insertion. For insertion, type must be
+        specified. These rules apply to Artifacts and Contexts as well.
+        Corresponding errors may be raised. For example: AlreadyExists error will
+        be raised if duplicated executions, artifacts, or events are found.
+
+        It is not guaranteed that the created or updated executions, artifacts,
+        contexts and events will share the same `create_time_since_epoch`,
+        `last_update_time_since_epoch`, or `milliseconds_since_epoch` timestamps.
+
+        Args:
+          executions: A list of executions to insert or update.
+          artifacts: A list of artifacts to insert or update.
+          contexts: A list of contexts to insert and/or create associations and
+              attributions with.
+          event_edges: A list of events to insert with the indices of the
+              corresponding execution and artifact from the input lists of
+              executions and artifacts.
+
+        Returns:
+          Lists of execution, artifact, and context ids index-aligned with the
+          inputs.
+      operationId: MetadataStoreService_PutLineageSubgraph
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutLineageSubgraphResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutLineageSubgraphRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutContexts:
+    post:
+      summary: Inserts or updates contexts in database and returns a list of context ids.
+      description: |-
+        If an context_id is specified for a context, it is an update.
+        If an context_id is unspecified, it will insert a new context.
+        For new contexts, type must be specified.
+        For old contexts, type must be unchanged or unspecified.
+
+        It is not guaranteed that the created or updated contexts will share the
+        same `create_time_since_epoch` or `last_update_time_since_epoch`
+        timestamps.
+
+        Args:
+          contexts: A list of contexts to insert or update.
+
+        Returns:
+          A list of context ids index-aligned with the input.
+      operationId: MetadataStoreService_PutContexts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutContextsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutContextsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutAttributionsAndAssociations:
+    post:
+      summary: |-
+        Inserts attribution and association relationships in the database.
+        The context_id, artifact_id, and execution_id must already exist.
+        If the relationship exists, this call does nothing. Once added, the
+        relationships cannot be modified.
+      description: |-
+        Args:
+          attributions: A list of attributions to insert.
+          associations: A list of associations to insert.
+      operationId: MetadataStoreService_PutAttributionsAndAssociations
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutAttributionsAndAssociationsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutAttributionsAndAssociationsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/PutParentContexts:
+    post:
+      summary: |-
+        Inserts parental context relationships in the database.
+        The ParentContext relationship has direction. The call fails if cycles are
+        detected.
+      description: |-
+        Args:
+          parent_contexts: A list of parent contexts to insert.
+      operationId: MetadataStoreService_PutParentContexts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataPutParentContextsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataPutParentContextsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactType:
+    post:
+      summary: |-
+        Gets an artifact type. Returns a NOT_FOUND error if the type does not
+        exist.
+      operationId: MetadataStoreService_GetArtifactType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactTypesByID:
+    post:
+      summary: |-
+        Gets a list of artifact types by ID.
+        If no artifact types with an ID exists, the artifact type is skipped.
+      operationId: MetadataStoreService_GetArtifactTypesByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactTypes:
+    post:
+      summary: Gets a list of all artifact types.
+      operationId: MetadataStoreService_GetArtifactTypes
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionType:
+    post:
+      summary: Gets an execution type, or None if it does not exist.
+      operationId: MetadataStoreService_GetExecutionType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionTypesByID:
+    post:
+      summary: |-
+        Gets a list of execution types by ID.
+        If no execution types with an ID exists, the execution type is skipped.
+      operationId: MetadataStoreService_GetExecutionTypesByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionTypes:
+    post:
+      summary: Gets a list of all execution types.
+      operationId: MetadataStoreService_GetExecutionTypes
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextType:
+    post:
+      summary: Gets a context type. Returns a NOT_FOUND error if the type does not exist.
+      operationId: MetadataStoreService_GetContextType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextTypesByID:
+    post:
+      summary: |-
+        Gets a list of context types by ID.
+        If no context types with an ID exists, the context type is skipped.
+      operationId: MetadataStoreService_GetContextTypesByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextTypes:
+    post:
+      summary: Gets a list of all context types.
+      operationId: MetadataStoreService_GetContextTypes
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifacts:
+    post:
+      summary: Gets all the artifacts.
+      operationId: MetadataStoreService_GetArtifacts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          description: |-
+            Request to retrieve Artifacts using List options.
+            If option is not specified then all Artifacts are returned.
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutions:
+    post:
+      summary: Gets all the executions.
+      operationId: MetadataStoreService_GetExecutions
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          description: |-
+            Request to retrieve Executions using List options.
+            If option is not specified then all Executions are returned.
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContexts:
+    post:
+      summary: Gets all the contexts.
+      operationId: MetadataStoreService_GetContexts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          description: |-
+            Request to retrieve Contexts using List options.
+            If option is not specified then all Contexts are returned.
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactsByID:
+    post:
+      summary: Gets all artifacts with matching ids.
+      description: |-
+        The result is not index-aligned: if an id is not found, it is not returned.
+
+        Args:
+          artifact_ids: A list of artifact ids to retrieve.
+
+        Returns:
+          Artifacts with matching ids.
+      operationId: MetadataStoreService_GetArtifactsByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionsByID:
+    post:
+      summary: Gets all executions with matching ids.
+      description: |-
+        The result is not index-aligned: if an id is not found, it is not returned.
+
+        Args:
+          execution_ids: A list of execution ids to retrieve.
+      operationId: MetadataStoreService_GetExecutionsByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextsByID:
+    post:
+      summary: Gets all contexts with matching ids.
+      description: |-
+        The result is not index-aligned: if an id is not found, it is not returned.
+
+        Args:
+          context_ids: A list of context ids to retrieve.
+      operationId: MetadataStoreService_GetContextsByID
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByIDResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByIDRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactsByType:
+    post:
+      summary: Gets all the artifacts of a given type.
+      operationId: MetadataStoreService_GetArtifactsByType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionsByType:
+    post:
+      summary: Gets all the executions of a given type.
+      operationId: MetadataStoreService_GetExecutionsByType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextsByType:
+    post:
+      summary: Gets all the contexts of a given type.
+      operationId: MetadataStoreService_GetContextsByType
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByTypeResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByTypeRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactByTypeAndName:
+    post:
+      summary: Gets the artifact of the given type and artifact name.
+      operationId: MetadataStoreService_GetArtifactByTypeAndName
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactByTypeAndNameResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactByTypeAndNameRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionByTypeAndName:
+    post:
+      summary: Gets the execution of the given type and execution name.
+      operationId: MetadataStoreService_GetExecutionByTypeAndName
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionByTypeAndNameResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionByTypeAndNameRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextByTypeAndName:
+    post:
+      summary: Gets the context of the given type and context name.
+      operationId: MetadataStoreService_GetContextByTypeAndName
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextByTypeAndNameResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextByTypeAndNameRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactsByURI:
+    post:
+      summary: Gets all the artifacts with matching uris.
+      operationId: MetadataStoreService_GetArtifactsByURI
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByURIResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByURIRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetEventsByExecutionIDs:
+    post:
+      summary: Gets all events with matching execution ids.
+      operationId: MetadataStoreService_GetEventsByExecutionIDs
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetEventsByExecutionIDsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          description: Gets all events with matching execution ids.
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetEventsByExecutionIDsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetEventsByArtifactIDs:
+    post:
+      summary: Gets all events with matching artifact ids.
+      operationId: MetadataStoreService_GetEventsByArtifactIDs
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetEventsByArtifactIDsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetEventsByArtifactIDsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactsByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetArtifactsByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionsByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetExecutionsByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextsByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetContextsByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactTypesByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetArtifactTypesByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactTypesByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionTypesByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetExecutionTypesByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionTypesByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextTypesByExternalIds:
+    post:
+      summary: Gets all the artifacts with matching external ids.
+      operationId: MetadataStoreService_GetContextTypesByExternalIds
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesByExternalIdsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextTypesByExternalIdsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextsByArtifact:
+    post:
+      summary: Gets all context that an artifact is attributed to.
+      operationId: MetadataStoreService_GetContextsByArtifact
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByArtifactResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByArtifactRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetContextsByExecution:
+    post:
+      summary: Gets all context that an execution is associated with.
+      operationId: MetadataStoreService_GetContextsByExecution
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByExecutionResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetContextsByExecutionRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetParentContextsByContext:
+    post:
+      summary: Gets all parent contexts that a context is related.
+      operationId: MetadataStoreService_GetParentContextsByContext
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetParentContextsByContextResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetParentContextsByContextRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetChildrenContextsByContext:
+    post:
+      summary: Gets all children contexts that a context is related.
+      operationId: MetadataStoreService_GetChildrenContextsByContext
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetChildrenContextsByContextResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetChildrenContextsByContextRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetParentContextsByContexts:
+    post:
+      summary: Batch getting all the parent contexts that a list of contexts are related.
+      operationId: MetadataStoreService_GetParentContextsByContexts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetParentContextsByContextsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetParentContextsByContextsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetChildrenContextsByContexts:
+    post:
+      summary: |-
+        Batch getting all the children contexts that a list of contexts are
+        related.
+      operationId: MetadataStoreService_GetChildrenContextsByContexts
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetChildrenContextsByContextsResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetChildrenContextsByContextsRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetArtifactsByContext:
+    post:
+      summary: Gets all direct artifacts that a context attributes to.
+      operationId: MetadataStoreService_GetArtifactsByContext
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByContextResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetArtifactsByContextRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetExecutionsByContext:
+    post:
+      summary: Gets all direct executions that a context associates with.
+      operationId: MetadataStoreService_GetExecutionsByContext
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByContextResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetExecutionsByContextRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetLineageGraph:
+    post:
+      summary: |-
+        TODO(b/283852485): Deprecate GetLineageGraph API after migration to
+        GetLineageSubgraph API.
+        The transaction performs a constrained transitive closure and returns a
+        lineage subgraph satisfying the conditions and constraints specified in
+        the GetLineageGraphRequest.
+      operationId: MetadataStoreService_GetLineageGraph
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetLineageGraphResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          description: |-
+            TODO(b/283852485): Deprecate GetLineageGraph API after migration to
+            GetLineageSubgraph API.
+            A lineage query request to specify the query nodes of interest and the
+            boundary conditions for pruning the returned graph.
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetLineageGraphRequest'
+      tags:
+        - MetadataStoreService
+  /ml_metadata.MetadataStoreService/GetLineageSubgraph:
+    post:
+      summary: |-
+        Gets a lineage subgraph by performing graph traversal from a list of
+        interested nodes.
+        A lineage subgraph without node details (e.g., external_id, properties)
+        will be returned.
+      operationId: MetadataStoreService_GetLineageSubgraph
+      responses:
+        "200":
+          description: A successful response.
+          schema:
+            $ref: '#/definitions/ml_metadataGetLineageSubgraphResponse'
+        default:
+          description: An unexpected error response.
+          schema:
+            $ref: '#/definitions/rpcStatus'
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/ml_metadataGetLineageSubgraphRequest'
+      tags:
+        - MetadataStoreService
+definitions:
+  EventPath:
+    type: object
+    properties:
+      steps:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/PathStep'
+        description: |-
+          A simple path (e.g. {step{key:"foo"}}) can name an artifact in the
+          context of an execution.
+    description: |-
+      A simple path (e.g. {step{key:"foo"}}) can name an artifact in the context
+      of an execution.
+  GetChildrenContextsByContextsResponseChildrenContextsPerParent:
+    type: object
+    properties:
+      children_contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  GetParentContextsByContextsResponseParentContextsPerChild:
+    type: object
+    properties:
+      parent_contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  LineageGraphQueryOptionsBoundaryConstraint:
+    type: object
+    properties:
+      max_num_hops:
+        type: string
+        format: int64
+        description: |-
+          The maximum number of hops from the `query_nodes` to traverse.
+          A hop is defined as a jump to the next node following the path of
+          node -> event -> next_node.
+          For example, in the lineage graph a_1 -> e_1 -> a_2:
+          a_2 is 2 hops away from a_1, and e_1 is 1 hop away from a_1.
+          `max_num_hops` should be non-negative.
+          When its value is set to 0, only the `query_nodes` are returned.
+      boundary_artifacts:
+        type: string
+        description: |-
+          Filtering conditions for retrieving the lineage graph.
+          Please refer to `ListOperationOptions.filter_query` for the syntax.
+
+          If set, the `boundary_artifacts` defines which artifacts to keep in the
+          returned lineage graph during the graph search.
+          Artifacts that do not satisfy the `boundary_artifacts` are filtered out,
+          and the subgraphs starting at them will be pruned.
+          If not set, no artifacts will be filtered out.
+          Taking the following lineage graph as example:
+          (`a` represents an Artifact, `e` represents an Execution, each arrow
+          represents a hop.)
+           a_0   a_1     a_3
+            |      \   /     \
+           \/      \/ \/     \/
+           e_0      e_1      e_3
+                            /   \
+                           \/   \/
+                 a_2     a_4     a_5
+                    \   /
+                    \/ \/
+                     e_2
+          To query all the upstream and downstream nodes 3 hops away from a_4,
+          while excluding the upstream subgraph starting at a_3, then
+          `stop_conditions` can be set as:
+          {
+            max_num_hops: 3
+            boundary_artifacts: 'id != 3'
+          }
+          With the `stop_conditions`, {a_3, e_1, a_1, a_0, e_0} will be filtered
+          out.
+          The returned lineage graph looks like:
+                             e_3
+                            /   \
+                           \/   \/
+                 a_2     a_4     a_5
+                    \   /
+                    \/ \/
+                     e_2
+      boundary_executions:
+        type: string
+        title: |-
+          If set, the `boundary_executions` defines which executions to keep in the
+          returned lineage graph during the graph search.
+          Executions that do not satisfy the `boundary_executions` are filtered out
+          and the subgraphs starting at them will be pruned.
+          If not set, no executions will be filtered out.
+          In the example above, to query for all the upstream and downstream nodes
+          3 hops away from a_4, while excluding the upstream subgraph and the
+          downstream subgraph starting at e_3, then `stop_conditions` can be set as
+          {
+            max_num_hops: 3
+            boundary_executions: 'id != 3'
+          }
+          With the `stop_conditions`, {e_3, a_5, a_3, e_1, a_1, a_0, e_0} will be
+          filtered out.
+          The returned lineage graph looks like:
+                 a_2     a_4
+                    \   /
+                    \/ \/
+                     e_2
+          However, for the following graph:
+           a_0   a_1     a_3
+            |      \   /     \
+           \/      \/ \/     \/
+           e_0      e_1      e_3
+                       \    /   \
+                        \/ \/   \/
+                 a_2     a_4     a_5
+                    \   /
+                    \/ \/
+                     e_2
+          With the same `stop_conditions`, only {e_3, a_5, a_0, e_0} will be
+          filtered out.
+          The returned lineage graph looks like:
+                a_1     a_3
+                   \   /
+                   \/ \/
+                    e_1
+                       \
+                        \/
+                 a_2     a_4
+                    \   /
+                    \/ \/
+                     e_2
+    description: Filtering conditions for retrieving the lineage graph.
+  LineageSubgraphQueryOptionsDirection:
+    type: string
+    enum:
+      - DIRECTION_UNSPECIFIED
+      - UPSTREAM
+      - DOWNSTREAM
+      - BIDIRECTIONAL
+    default: DIRECTION_UNSPECIFIED
+    description: |2-
+       - DIRECTION_UNSPECIFIED: Direction is by defult DIRECTION_UNSPECIFIED, which is equivalent to
+      BIDIRECTIONAL.
+       - UPSTREAM: Indicates tracing the lineage graph by hops in upstream direction.
+       - DOWNSTREAM: Indicates tracing the lineage graph by hops in downstream direction.
+       - BIDIRECTIONAL: Indicates tracing the lineage graph in both directions.
+  LineageSubgraphQueryOptionsStartingNodes:
+    type: object
+    properties:
+      filter_query:
+        type: string
+        description: |-
+          `filter_query` is a boolean expression in SQL syntax that is used to
+          specify the conditions on starting nodes.
+          Please refer to ListOperationOptions.filter_query for more details.
+    description: |-
+      `starting_nodes` is a list of nodes of interest to start graph tracing.
+      NOTE: The maximum number of starting nodes is 100 at most.
+  ListOperationOptionsOrderByField:
+    type: object
+    properties:
+      field:
+        $ref: '#/definitions/OrderByFieldField'
+        description: Field to order.
+      is_asc:
+        type: boolean
+        description: Direction of ordering.
+  OrderByFieldField:
+    type: string
+    enum:
+      - FIELD_UNSPECIFIED
+      - CREATE_TIME
+      - LAST_UPDATE_TIME
+      - ID
+    default: FIELD_UNSPECIFIED
+    description: Supported fields for Ordering.
+  PathStep:
+    type: object
+    properties:
+      index:
+        type: string
+        format: int64
+      key:
+        type: string
+  PutExecutionRequestArtifactAndEvent:
+    type: object
+    properties:
+      artifact:
+        $ref: '#/definitions/ml_metadataArtifact'
+        description: |-
+          The pair may have an artifact. If present and no artifact.id is given,
+          then it inserts the artifact, otherwise it updates the artifact.
+      event:
+        $ref: '#/definitions/ml_metadataEvent'
+        description: |-
+          The pair may have an event. Providing event.artifact_id or
+          event.execution_id is optional. If the ids are given, it must align with
+          the `artifact`.id / `execution`.id respectively. If artifact is not
+          given and event.artifact_id is set, it must exist in the backend.
+    description: |-
+      A pair of an artifact and an event used or generated by an execution, e.g.,
+      during the execution run, it uses none or many artifacts as input, and
+      generate none or many artifacts as output.
+  PutLineageSubgraphRequestEventEdge:
+    type: object
+    properties:
+      execution_index:
+        type: integer
+        format: int32
+        description: Index in the array of executions.
+      artifact_index:
+        type: integer
+        format: int32
+        description: Index in the array of artifacts.
+      event:
+        $ref: '#/definitions/ml_metadataEvent'
+  ml_metadataAnyArtifactStructType:
+    type: object
+    description: Every ArtifactStruct is a member of this type.
+  ml_metadataArtifact:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: Output only. The unique server generated id of the artifact.
+        readOnly: true
+      name:
+        type: string
+        description: |-
+          The client provided name of the artifact. This field is optional. If set,
+          it must be unique among all the artifacts of the same artifact type within
+          a database instance and cannot be changed once set.
+      type_id:
+        type: string
+        format: int64
+        description: |-
+          The id of an ArtifactType. This needs to be specified when an artifact is
+          created, and it cannot be changed.
+      type:
+        type: string
+        description: Output only. The name of an ArtifactType.
+        readOnly: true
+      uri:
+        type: string
+        description: |-
+          The uniform resource identifier of the physical artifact.
+          May be empty if there is no physical artifact.
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all artifacts within a database instance.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: |-
+          Properties of the artifact.
+          Properties must be specified in the ArtifactType.
+      custom_properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: User provided custom properties which are not defined by its type.
+      state:
+        $ref: '#/definitions/ml_metadataArtifactState'
+        description: The state of the artifact known to the system.
+      create_time_since_epoch:
+        type: string
+        format: int64
+        description: Output only. Create time of the artifact in millisecond since epoch.
+        readOnly: true
+      last_update_time_since_epoch:
+        type: string
+        format: int64
+        description: |-
+          Output only. Last update time of the artifact since epoch in millisecond
+          since epoch.
+        readOnly: true
+      system_metadata:
+        $ref: '#/definitions/protobufAny'
+        description: Output only.
+        readOnly: true
+  ml_metadataArtifactState:
+    type: string
+    enum:
+      - UNKNOWN
+      - PENDING
+      - LIVE
+      - MARKED_FOR_DELETION
+      - DELETED
+      - ABANDONED
+      - REFERENCE
+    default: UNKNOWN
+    description: |2-
+       - PENDING: A state indicating that the artifact may exist.
+       - LIVE: A state indicating that the artifact should exist, unless something
+      external to the system deletes it.
+       - MARKED_FOR_DELETION: A state indicating that the artifact should be deleted.
+       - DELETED: A state indicating that the artifact has been deleted.
+       - ABANDONED: A state indicating that the artifact has been abandoned, which may be
+      due to a failed or cancelled execution.
+       - REFERENCE: A state indicating that the artifact is a reference artifact. At
+      execution start time, the orchestrator produces an output artifact for
+      each output key with state PENDING. However, for an intermediate
+      artifact, this first artifact's state will be REFERENCE. Intermediate
+      artifacts emitted during a component's execution will copy the REFERENCE
+      artifact's attributes. At the end of an execution, the artifact state
+      should remain REFERENCE instead of being changed to LIVE.
+  ml_metadataArtifactStructType:
+    type: object
+    properties:
+      simple:
+        $ref: '#/definitions/ml_metadataArtifactType'
+        description: Matches exactly this type.
+      union_type:
+        $ref: '#/definitions/ml_metadataUnionArtifactStructType'
+      intersection:
+        $ref: '#/definitions/ml_metadataIntersectionArtifactStructType'
+      list:
+        $ref: '#/definitions/ml_metadataListArtifactStructType'
+      none:
+        $ref: '#/definitions/ml_metadataNoneArtifactStructType'
+      any:
+        $ref: '#/definitions/ml_metadataAnyArtifactStructType'
+      tuple:
+        $ref: '#/definitions/ml_metadataTupleArtifactStructType'
+      dict:
+        $ref: '#/definitions/ml_metadataDictArtifactStructType'
+    description: |-
+      The list of ArtifactStruct is EXPERIMENTAL and not in use yet.
+      The type of an ArtifactStruct.
+      An artifact struct type represents an infinite set of artifact structs.
+      It can specify the input or output type of an ExecutionType.
+      See the more specific types referenced in the message for more details.
+  ml_metadataArtifactType:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: The id of the type. 1-1 relationship between type names and IDs.
+      name:
+        type: string
+        description: |-
+          The name of the type. It must be unique among ArtifactTypes within a
+          database instance.
+      version:
+        type: string
+        description: An optional version of the type. An empty string is treated as unset.
+      description:
+        type: string
+        description: An optional description about the type.
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all artifact types within a database
+          instance.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataPropertyType'
+        description: |-
+          The schema of the type.
+          Properties are always optional in the artifact.
+          Properties of an artifact type can be expanded but not contracted (i.e.,
+          you can add columns but not remove them).
+      base_type:
+        $ref: '#/definitions/ml_metadataArtifactTypeSystemDefinedBaseType'
+        description: |-
+          An optional system defined base_type expressing the intent of the current
+          type. This field is useful for the tool builders to utilize the stored MLMD
+          information, e.g., `MyModel` ArtifactType could set base_type = MODEL.
+  ml_metadataArtifactTypeSystemDefinedBaseType:
+    type: string
+    enum:
+      - UNSET
+      - DATASET
+      - MODEL
+      - METRICS
+      - STATISTICS
+    default: UNSET
+    description: An enum of system-defined artifact types.
+  ml_metadataAssociation:
+    type: object
+    properties:
+      execution_id:
+        type: string
+        format: int64
+      context_id:
+        type: string
+        format: int64
+    description: the Association edges between Context and Execution instances.
+  ml_metadataAttribution:
+    type: object
+    properties:
+      artifact_id:
+        type: string
+        format: int64
+      context_id:
+        type: string
+        format: int64
+    description: the Attribution edges between Context and Artifact instances.
+  ml_metadataContext:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: Output Only. The unique server generated id of the context.
+      name:
+        type: string
+        description: |-
+          The client provided name of the context. It must be unique within a
+          database instance.
+      type_id:
+        type: string
+        format: int64
+        description: |-
+          The id of a ContextType. This needs to be specified when a context is
+          created, and it cannot be changed.
+      type:
+        type: string
+        description: Output only. The name of a ContextType.
+        readOnly: true
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all contexts within a virtual database.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: Values of the properties, which must be specified in the ContextType.
+      custom_properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: User provided custom properties which are not defined by its type.
+      create_time_since_epoch:
+        type: string
+        format: int64
+        description: Output only. Create time of the context in millisecond since epoch.
+        readOnly: true
+      last_update_time_since_epoch:
+        type: string
+        format: int64
+        description: Output only. Last update time of the context in millisecond since epoch.
+        readOnly: true
+      system_metadata:
+        $ref: '#/definitions/protobufAny'
+        description: Output only system metadata.
+  ml_metadataContextType:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: The id of the type. 1-1 relationship between type names and IDs.
+      name:
+        type: string
+        description: |-
+          The name of the type, e.g., Pipeline, Task, Session, User, etc. It must be
+          unique among ContextTypes within a database instance.
+      version:
+        type: string
+        description: An optional version of the type. An empty string is treated as unset.
+      description:
+        type: string
+        description: An optional description about the type.
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all context types within a database
+          instance.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataPropertyType'
+        description: |-
+          The schema of the type, e.g., name: string, owner: string
+          Properties are always optional in the context.
+          Properties of an context type can be expanded but not contracted (i.e.,
+          you can add columns but not remove them).
+      base_type:
+        $ref: '#/definitions/ml_metadataContextTypeSystemDefinedBaseType'
+        description: |-
+          An optional system defined base_type expressing the intent of the current
+          context type.
+          *NOTE: currently there are no system Context types defined, and the field
+          is not used for ContextType.
+  ml_metadataContextTypeSystemDefinedBaseType:
+    type: string
+    enum:
+      - UNSET
+    default: UNSET
+    description: An enum of system-defined context types.
+  ml_metadataDictArtifactStructType:
+    type: object
+    properties:
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataArtifactStructType'
+        description: Underlying properties for the type.
+      none_type_not_required:
+        type: boolean
+        description: |-
+          If true, then if properties["foo"] can be None, then that key is not
+          required.
+      extra_properties_type:
+        $ref: '#/definitions/ml_metadataArtifactStructType'
+        description: |-
+          Extra keys are allowed that are not specified in properties. These
+          keys must have the type specified below.
+          If this is not specified, then extra properties are not allowed.
+    title: |-
+      A artifact struct type that represents a record or struct-like dictionary.
+      ArtifactStruct would be map (i.e. ArtifactStructMap)
+  ml_metadataEvent:
+    type: object
+    properties:
+      artifact_id:
+        type: string
+        format: int64
+        description: |-
+          The artifact id is required for an event, and should refer to an
+          existing artifact.
+      execution_id:
+        type: string
+        format: int64
+        description: |-
+          The execution_id is required for an event, and should refer to an
+          existing execution.
+      path:
+        $ref: '#/definitions/EventPath'
+        description: The path in an artifact struct, or the name of an artifact.
+      type:
+        $ref: '#/definitions/ml_metadataEventType'
+        description: The type of an event.
+      milliseconds_since_epoch:
+        type: string
+        format: int64
+        title: |-
+          Time the event occurred
+          Epoch is Jan 1, 1970, UTC
+      system_metadata:
+        $ref: '#/definitions/protobufAny'
+        description: Output only.
+        readOnly: true
+    description: |-
+      my_result = my_execution({"data":[3,7],"schema":8})
+
+      Where 3, 7, and 8 are artifact_ids, Assuming execution_id of my_execution is
+      12 and artifact_id of my_result is 15, the events are:
+        {
+            artifact_id:3,
+            execution_id: 12,
+            type:DECLARED_INPUT,
+            path:{step:[{"key":"data"},{"index":0}]}
+        }
+        {
+            artifact_id:7,
+            execution_id: 12,
+            type:DECLARED_INPUT,
+            path:{step:[{"key":"data"},{"index":1}]}
+        }
+        {
+            artifact_id:8,
+            execution_id: 12,
+            type:DECLARED_INPUT,
+            path:{step:[{"key":"schema"}]}
+        }
+        {
+            artifact_id:15,
+            execution_id: 12,
+            type:DECLARED_OUTPUT,
+            path:{step:[{"key":"my_result"}]}
+        }
+
+      Other event types include INPUT/OUTPUT, INTERNAL_INPUT/_OUTPUT and
+      PENDING_OUTPUT:
+
+      * The INPUT/OUTPUT is an event that actually reads/writes an artifact by an
+        execution. The input/output artifacts may not declared in the signature,
+        For example, the trainer may output multiple caches of the parameters
+        (as an OUTPUT), then finally write the SavedModel as a DECLARED_OUTPUT.
+
+      * The INTERNAL_INPUT/_OUTPUT are event types which are only meaningful to
+        an orchestration system to keep track of the details for later debugging.
+        For example, a fork happened conditioning on an artifact, then an execution
+        is triggered, such fork implementing may need to log the read and write
+        of artifacts and may not be worth displaying to the users.
+
+        For instance, in the above example,
+
+          my_result = my_execution({"data":[3,7],"schema":8})
+
+        there is another execution (id: 15), which represents a
+        `garbage_collection` step in an orchestration system
+
+          gc_result = garbage_collection(my_result)
+
+        that cleans `my_result` if needed. The details should be invisible to the
+        end users and lineage tracking. The orchestrator can emit following events:
+
+          {
+              artifact_id: 15,
+              execution_id: 15,
+              type:INTERNAL_INPUT,
+          }
+          {
+              artifact_id:16,  // New artifact containing the GC job result.
+              execution_id: 15,
+              type:INTERNAL_OUTPUT,
+              path:{step:[{"key":"gc_result"}]}
+          }
+
+      * The PENDING_OUTPUT event is used to indicate that an artifact is
+        tentatively associated with an active execution which has not yet been
+        finalized. For example, an orchestration system can register output
+        artifacts of a running execution with PENDING_OUTPUT events to indicate
+        the output artifacts the execution is expected to produce. When the
+        execution is finished, the final set of output artifacts can be associated
+        with the exeution using OUTPUT events, and any unused artifacts which were
+        previously registered with PENDING_OUTPUT events can be updated to set
+        their Artifact.State to ABANDONED.
+
+      Events are unique of the same
+      (artifact_id, execution_id, type) combination within a metadata store.
+    title: |-
+      An event represents a relationship between an artifact and an execution.
+      There are different kinds of events, relating to both input and output, as
+      well as how they are used by the mlmd powered system.
+      For example, the DECLARED_INPUT and DECLARED_OUTPUT events are part of the
+      signature of an execution. For example, consider:
+  ml_metadataEventType:
+    type: string
+    enum:
+      - UNKNOWN
+      - DECLARED_OUTPUT
+      - DECLARED_INPUT
+      - INPUT
+      - OUTPUT
+      - INTERNAL_INPUT
+      - INTERNAL_OUTPUT
+      - PENDING_OUTPUT
+    default: UNKNOWN
+    description: |-
+      Events distinguish between an artifact that is written by the execution
+      (possibly as a cache), versus artifacts that are part of the declared
+      output of the Execution. For more information on what DECLARED_ means,
+      see the comment on the message.
+
+       - DECLARED_OUTPUT: A declared output of the execution.
+       - DECLARED_INPUT: A declared input of the execution.
+       - INPUT: An input of the execution.
+       - OUTPUT: An output of the execution.
+       - INTERNAL_INPUT: An internal input of the execution.
+       - INTERNAL_OUTPUT: An internal output of the execution.
+       - PENDING_OUTPUT: A pending output of the execution.
+  ml_metadataExecution:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: Output only. The unique server generated id of the execution.
+        readOnly: true
+      name:
+        type: string
+        description: |-
+          The client provided name of the execution. This field is optional. If set,
+          it must be unique among all the executions of the same execution type
+          within a database instance and cannot be changed once set.
+      type_id:
+        type: string
+        format: int64
+        description: |-
+          The id of an ExecutionType. This needs to be specified when an execution is
+          created, and it cannot be changed.
+          The id of an ExecutionType.
+      type:
+        type: string
+        description: Output only. The name of an ExecutionType.
+        readOnly: true
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all executions within a database instance.
+      last_known_state:
+        $ref: '#/definitions/ml_metadataExecutionState'
+        description: The last known state of an execution in the system.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: |-
+          Properties of the Execution.
+          Properties must be specified in the ExecutionType.
+      custom_properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataValue'
+        description: User provided custom properties which are not defined by its type.
+      create_time_since_epoch:
+        type: string
+        format: int64
+        description: Output only. Create time of the execution in millisecond since epoch.
+        readOnly: true
+      last_update_time_since_epoch:
+        type: string
+        format: int64
+        description: Output only. Last update time of the execution in millisecond since epoch.
+        readOnly: true
+      system_metadata:
+        $ref: '#/definitions/protobufAny'
+        description: Output only.
+        readOnly: true
+  ml_metadataExecutionState:
+    type: string
+    enum:
+      - UNKNOWN
+      - NEW
+      - RUNNING
+      - COMPLETE
+      - FAILED
+      - CACHED
+      - CANCELED
+    default: UNKNOWN
+    description: |-
+      The state of the Execution. The state transitions are
+        NEW -> RUNNING -> COMPLETE | CACHED | FAILED | CANCELED
+      CACHED means the execution is skipped due to cached results.
+      CANCELED means the execution is skipped due to precondition not met. It is
+      different from CACHED in that a CANCELED execution will not have any event
+      associated with it. It is different from FAILED in that there is no
+      unexpected error happened and it is regarded as a normal state.
+  ml_metadataExecutionType:
+    type: object
+    properties:
+      id:
+        type: string
+        format: int64
+        description: The id of the type. 1-1 relationship between type names and IDs.
+      name:
+        type: string
+        description: |-
+          The name of the type. It must be unique among ExecutionTypes within a
+          database instance.
+      version:
+        type: string
+        description: An optional version of the type. An empty string is treated as unset.
+      description:
+        type: string
+        description: An optional description about the type.
+      external_id:
+        type: string
+        description: |-
+          The external id that come from the clients’ system. This field is optional.
+          If set, it must be unique among all execution types within a database
+          instance.
+      properties:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/ml_metadataPropertyType'
+        description: |-
+          The schema of the type.
+          Properties are always optional in the execution.
+      input_type:
+        $ref: '#/definitions/ml_metadataArtifactStructType'
+        description: |-
+          The ArtifactStructType of the input.
+          For example: {
+              "dict":{
+                 "properties":{
+                   "schema":{
+                     "union_type":{
+                       "none":{},
+                       "simple":{...schema type...}
+                      },
+                   },
+                   "data":{
+                     "simple":{...data_type...}
+                   }
+                }
+              }
+          }
+          That would be an optional schema field with a required data field.
+      output_type:
+        $ref: '#/definitions/ml_metadataArtifactStructType'
+        title: |-
+          The ArtifactStructType of the output.
+          For example {"simple":{...stats gen output type...}}
+      base_type:
+        $ref: '#/definitions/ml_metadataExecutionTypeSystemDefinedBaseType'
+        description: |-
+          An optional system defined base_type expressing the intent of the current
+          type. This field is useful for the tool builders to utilize the stored MLMD
+          information, e.g., `MyTrainer` ExecutionType could set base_type = TRAIN.
+  ml_metadataExecutionTypeSystemDefinedBaseType:
+    type: string
+    enum:
+      - UNSET
+      - TRAIN
+      - TRANSFORM
+      - PROCESS
+      - EVALUATE
+      - DEPLOY
+    default: UNSET
+    description: An enum of system-defined execution types.
+  ml_metadataGetArtifactByTypeAndNameRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: |-
+          If not set, it looks for the type with type_name and artifact_name with
+          default type_version.
+      artifact_name:
+        type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactByTypeAndNameResponse:
+    type: object
+    properties:
+      artifact:
+        $ref: '#/definitions/ml_metadataArtifact'
+  ml_metadataGetArtifactTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: If not set, it looks for the type with type_name with default type_version.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactTypeResponse:
+    type: object
+    properties:
+      artifact_type:
+        $ref: '#/definitions/ml_metadataArtifactType'
+        description: Gets an artifact type, or clear if it does not exist.
+  ml_metadataGetArtifactTypesByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactTypesByExternalIdsResponse:
+    type: object
+    properties:
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+  ml_metadataGetArtifactTypesByIDRequest:
+    type: object
+    properties:
+      type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactTypesByIDResponse:
+    type: object
+    properties:
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+        description: |-
+          The result is not index-aligned: if an id is not found, it is not
+          returned.
+  ml_metadataGetArtifactTypesRequest:
+    type: object
+    properties:
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactTypesResponse:
+    type: object
+    properties:
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+  ml_metadataGetArtifactsByContextRequest:
+    type: object
+    properties:
+      context_id:
+        type: string
+        format: int64
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify List options.
+          Currently supports:
+            1. Field to order the results.
+            2. Page size.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactsByContextResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetArtifactsByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactsByExternalIdsResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+  ml_metadataGetArtifactsByIDRequest:
+    type: object
+    properties:
+      artifact_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of artifact ids to retrieve.
+      populate_artifact_types:
+        type: boolean
+        description: |-
+          An option to populate all the ArtifactTypes in the response.
+          If true, returns retrieved Artifacts and their artifact types, which can be
+          matched by type_ids.
+          If false, returns only the retrieved Artifacts.
+          Example request proto:
+            {
+              artifact_ids: 101,
+              populate_artifact_types: true,
+            }
+            The response will contain an artifact with id = 101 and an artifact type
+            with id = artifact.type_id().
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactsByIDResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+        description: |-
+          Artifacts with matching ids.
+          This is not index-aligned: if an id is not found, it is not returned.
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+        description: |-
+          ArtifactTypes populated with matching type_ids owned by `artifacts`.
+          This is not index-aligned: if a type_id is not found, it is not returned.
+  ml_metadataGetArtifactsByTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: If not set, it looks for the type with type_name with default type_version.
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify List options.
+          Currently supports:
+            1. Field to order the results.
+            2. Page size.
+          If set, the request will
+            first fetch all artifacts with specified `type_name` and `type_version`,
+            then order by a specifield field
+            finally find the correct page and return #Artifacts of the page size.
+          Higher-level APIs may only use the functionalies partially.
+          Please reference the API documentation for the API behaviors.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactsByTypeResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetArtifactsByURIRequest:
+    type: object
+    properties:
+      uris:
+        type: array
+        items:
+          type: string
+        description: A list of artifact uris to retrieve.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetArtifactsByURIResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+  ml_metadataGetArtifactsRequest:
+    type: object
+    properties:
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify options.
+          Please refer to the documentation of ListOperationOptions for the supported
+          functionalities.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+    description: |-
+      Request to retrieve Artifacts using List options.
+      If option is not specified then all Artifacts are returned.
+  ml_metadataGetArtifactsResponse:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+        description: Returned artifacts.
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetChildrenContextsByContextRequest:
+    type: object
+    properties:
+      context_id:
+        type: string
+        format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetChildrenContextsByContextResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetChildrenContextsByContextsRequest:
+    type: object
+    properties:
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetChildrenContextsByContextsResponse:
+    type: object
+    properties:
+      contexts:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/GetChildrenContextsByContextsResponseChildrenContextsPerParent'
+  ml_metadataGetContextByTypeAndNameRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: |-
+          If not set, it looks for the type with type_name and context_name with
+          default type_version.
+      context_name:
+        type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextByTypeAndNameResponse:
+    type: object
+    properties:
+      context:
+        $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetContextTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: If not set, it looks for the type with type_name with default type_version.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextTypeResponse:
+    type: object
+    properties:
+      context_type:
+        $ref: '#/definitions/ml_metadataContextType'
+        description: Gets a context type, or clear if it does not exist.
+  ml_metadataGetContextTypesByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextTypesByExternalIdsResponse:
+    type: object
+    properties:
+      context_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContextType'
+  ml_metadataGetContextTypesByIDRequest:
+    type: object
+    properties:
+      type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextTypesByIDResponse:
+    type: object
+    properties:
+      context_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContextType'
+        description: |-
+          The result is not index-aligned: if an id is not found, it is not
+          returned.
+  ml_metadataGetContextTypesRequest:
+    type: object
+    properties:
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextTypesResponse:
+    type: object
+    properties:
+      context_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContextType'
+  ml_metadataGetContextsByArtifactRequest:
+    type: object
+    properties:
+      artifact_id:
+        type: string
+        format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextsByArtifactResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetContextsByExecutionRequest:
+    type: object
+    properties:
+      execution_id:
+        type: string
+        format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextsByExecutionResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetContextsByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextsByExternalIdsResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetContextsByIDRequest:
+    type: object
+    properties:
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of context ids to retrieve.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextsByIDResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+        description: |-
+          The result is not index-aligned: if an id is not found, it is not
+          returned.
+  ml_metadataGetContextsByTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify options.
+          Currently supports:
+            1. Field to order the results.
+            2. Page size.
+          If set, the request will
+            first fetch all contexts with specified `type_name` and `type_version`,
+            then order by a specifield field
+            finally find the correct page and return #Contexts of the page size.
+          Higher-level APIs may only use the functionalies partially.
+          Please reference the API documentation for the API behaviors.
+      type_version:
+        type: string
+        description: |-
+          If not set, it looks for the type with type_name and options with default
+          type_version.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetContextsByTypeResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetContextsRequest:
+    type: object
+    properties:
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify options.
+          Please refer to the documentation of ListOperationOptions for the supported
+          functionalities.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+    description: |-
+      Request to retrieve Contexts using List options.
+      If option is not specified then all Contexts are returned.
+  ml_metadataGetContextsResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+        description: Returned contexts.
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetEventsByArtifactIDsRequest:
+    type: object
+    properties:
+      artifact_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetEventsByArtifactIDsResponse:
+    type: object
+    properties:
+      events:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataEvent'
+  ml_metadataGetEventsByExecutionIDsRequest:
+    type: object
+    properties:
+      execution_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+    description: Gets all events with matching execution ids.
+  ml_metadataGetEventsByExecutionIDsResponse:
+    type: object
+    properties:
+      events:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataEvent'
+  ml_metadataGetExecutionByTypeAndNameRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: |-
+          If not set, it looks for the type with type_name and execution_name with
+          default type_version.
+      execution_name:
+        type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionByTypeAndNameResponse:
+    type: object
+    properties:
+      execution:
+        $ref: '#/definitions/ml_metadataExecution'
+  ml_metadataGetExecutionTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: If not set, it looks for the type with type_name with default type_version.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionTypeResponse:
+    type: object
+    properties:
+      execution_type:
+        $ref: '#/definitions/ml_metadataExecutionType'
+        description: Gets an execution type, or clear if it does not exist.
+  ml_metadataGetExecutionTypesByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionTypesByExternalIdsResponse:
+    type: object
+    properties:
+      execution_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecutionType'
+  ml_metadataGetExecutionTypesByIDRequest:
+    type: object
+    properties:
+      type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionTypesByIDResponse:
+    type: object
+    properties:
+      execution_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecutionType'
+        description: |-
+          The result is not index-aligned: if an id is not found, it is not
+          returned.
+  ml_metadataGetExecutionTypesRequest:
+    type: object
+    properties:
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionTypesResponse:
+    type: object
+    properties:
+      execution_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecutionType'
+  ml_metadataGetExecutionsByContextRequest:
+    type: object
+    properties:
+      context_id:
+        type: string
+        format: int64
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify List options.
+          Currently supports:
+            1. Field to order the results.
+            2. Page size.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionsByContextResponse:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionsByExternalIdsRequest:
+    type: object
+    properties:
+      external_ids:
+        type: array
+        items:
+          type: string
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionsByExternalIdsResponse:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+  ml_metadataGetExecutionsByIDRequest:
+    type: object
+    properties:
+      execution_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of execution ids to retrieve.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionsByIDResponse:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+        description: |-
+          The result is not index-aligned: if an id is not found, it is not
+          returned.
+  ml_metadataGetExecutionsByTypeRequest:
+    type: object
+    properties:
+      type_name:
+        type: string
+      type_version:
+        type: string
+        description: If not set, it looks for the type with type_name with default type_version.
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify List options.
+          Currently supports:
+            1. Field to order the results.
+            2. Page size.
+          If set, the request will
+            first fetch all executions with specified `type_name` and `type_version`,
+            then order by a specifield field
+            finally find the correct page and return #Executions of the page size.
+          Higher-level APIs may only use the functionalies partially.
+          Please reference the API documentation for the API behaviors.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetExecutionsByTypeResponse:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetExecutionsRequest:
+    type: object
+    properties:
+      options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+        description: |-
+          Specify options.
+          Please refer to the documentation of ListOperationOptions for the supported
+          functionalities.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+    description: |-
+      Request to retrieve Executions using List options.
+      If option is not specified then all Executions are returned.
+  ml_metadataGetExecutionsResponse:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+        description: Returned executions.
+      next_page_token:
+        type: string
+        description: |-
+          Token to use to retrieve next page of results if list options are used in
+          the request.
+  ml_metadataGetLineageGraphRequest:
+    type: object
+    properties:
+      options:
+        $ref: '#/definitions/ml_metadataLineageGraphQueryOptions'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+    description: |-
+      TODO(b/283852485): Deprecate GetLineageGraph API after migration to
+      GetLineageSubgraph API.
+      A lineage query request to specify the query nodes of interest and the
+      boundary conditions for pruning the returned graph.
+  ml_metadataGetLineageGraphResponse:
+    type: object
+    properties:
+      subgraph:
+        $ref: '#/definitions/ml_metadataLineageGraph'
+    description: |-
+      A connected lineage `subgraph` about the MLMD nodes derived from
+      LineageGraphRequest.query_conditions.
+  ml_metadataGetLineageSubgraphRequest:
+    type: object
+    properties:
+      lineage_subgraph_query_options:
+        $ref: '#/definitions/ml_metadataLineageSubgraphQueryOptions'
+        description: |-
+          Query options for lineage graph tracing from a list of interested
+          nodes.
+          A lineage subgraph without node details (e.g., external_id, properties)
+          will be returned. Please refer to `LineageSubgraphQueryOptions` for more
+          details.
+      read_mask:
+        type: string
+        description: |-
+          `read_mask` contains user specified paths of fields that should be included
+          in the returned lineage subgraph.
+            Supported field paths are: 'artifacts', 'executions', 'contexts',
+            'artifact_types', 'execution_types', 'context_types', and 'events'.
+            TODO(b/283852485): Include 'associations' or 'attributions' in the
+              returned graph.
+            If 'artifacts', 'executions', or 'contexts' is specified in `read_mask`,
+              the dehydrated nodes will be included.
+              Note: A dehydrated node means a node containing only its id and no
+              other information. User should call GetNodesByID or other APIs to get
+              node details later on.
+            If 'artifact_types', 'execution_types', or 'context_types' is specified
+              in `read_mask`, all the node types will be included.
+            If 'events' is specified in `read_mask`, the events will be included.
+            If `read_mask` is not set, the API will return all the fields in
+              the returned graph.
+            Note: Only paths of fields in LineageGraph message are supported. Paths
+            of fields in the submessage, such as "artifacts.id", "contexts.name" are
+            not acknowledged.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+  ml_metadataGetLineageSubgraphResponse:
+    type: object
+    properties:
+      lineage_subgraph:
+        $ref: '#/definitions/ml_metadataLineageGraph'
+        description: |-
+          A lineage subgraph of MLMD nodes and relations retrieved from lineage
+          graph tracing.
+  ml_metadataGetParentContextsByContextRequest:
+    type: object
+    properties:
+      context_id:
+        type: string
+        format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetParentContextsByContextResponse:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+  ml_metadataGetParentContextsByContextsRequest:
+    type: object
+    properties:
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataGetParentContextsByContextsResponse:
+    type: object
+    properties:
+      contexts:
+        type: object
+        additionalProperties:
+          $ref: '#/definitions/GetParentContextsByContextsResponseParentContextsPerChild'
+  ml_metadataIntersectionArtifactStructType:
+    type: object
+    properties:
+      constraints:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactStructType'
+    description: |-
+      A member of this type must satisfy all constraints.
+      This primarily useful not as an end-user type, but something calculated
+      as an intermediate type in the system.
+
+      For example, suppose you have a method:
+      def infer_my_input_type(a): # try to infer the input type of this method.
+        use_in_method_x(a) # with input type x_input
+        use_in_method_y(a) # with input type y_input
+
+      Given this information, you know that infer_my_input_type has
+      type {"intersection":{"constraints":[x_input, y_input]}}.
+
+      IntersectionArtifactStructType intersection_type = {"constraints":[
+          {"dict":{"properties":{"schema":{"any":{}}},
+                   "extra_properties":{"any":{}}}},
+          {"dict":{"properties":{"data":{"any":{}}},
+                   "extra_properties":{"any":{}}}}]}
+      Since the first constraint requires the dictionary to have a schema
+      property, and the second constraint requires it to have a data property, this
+      is equivalent to:
+      ArtifactStructType other_type =
+           {"dict":{"properties":{"schema":{"any":{}},"data":{"any":{}}}},
+            "extra_properties":{"any":{}}}
+  ml_metadataLineageGraph:
+    type: object
+    properties:
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+        title: extracted types
+      execution_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecutionType'
+      context_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContextType'
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+        title: extracted nodes
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+      events:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataEvent'
+        title: extracted edges
+      attributions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataAttribution'
+      associations:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataAssociation'
+    description: |-
+      A self-contained provenance (sub)graph representation consists of MLMD nodes
+      and their relationships. It is used to represent the query results from the
+      persistent backend (e.g., lineage about a node, reachability of two nodes).
+  ml_metadataLineageGraphQueryOptions:
+    type: object
+    properties:
+      artifacts_options:
+        $ref: '#/definitions/ml_metadataListOperationOptions'
+      stop_conditions:
+        $ref: '#/definitions/LineageGraphQueryOptionsBoundaryConstraint'
+        description: |-
+          A constraint option to define the filtering rules when querying a lineage
+          graph.
+      max_node_size:
+        type: string
+        format: int64
+        description: |-
+          Maximum total number of artifacts and executions in the whole returned
+          lineage graph.
+          If set to 0 or below, all related nodes will be returned without any
+          number limitation.
+          The number counts toward Artifacts and Executions. Nothing else considered.
+
+          NOTE: There is no pagination supported.
+    description: |-
+      TODO(b/283852485): Deprecate GetLineageGraph API after migration to
+      GetLineageSubgraph API.
+      The query options for `get_lineage_graph` operation.
+      `query_nodes` is a list of nodes of interest.
+      Currently only artifacts are supported as `query_nodes`.
+      `stop_conditions` defines the filtering rules when querying a lineage graph.
+      `max_node_size` defines the total number of artifacts and executions returned
+      in the subgraph.
+  ml_metadataLineageSubgraphQueryOptions:
+    type: object
+    properties:
+      starting_artifacts:
+        $ref: '#/definitions/LineageSubgraphQueryOptionsStartingNodes'
+      starting_executions:
+        $ref: '#/definitions/LineageSubgraphQueryOptionsStartingNodes'
+      max_num_hops:
+        type: string
+        format: int64
+        description: |-
+          The maximum number of hops from the `starting_nodes` to traverse.
+          A hop is defined as a jump to the next node following the path of
+          node -> event -> next_node.
+          For example, in the lineage graph a_1 -> e_1 -> a_2:
+          a_2 is 2 hops away from a_1, and e_1 is 1 hop away from a_1.
+          `max_num_hops` should be non-negative.
+          When its value is set to 0, only the `starting_nodes` are returned.
+      direction:
+        $ref: '#/definitions/LineageSubgraphQueryOptionsDirection'
+        description: |-
+          The direction of lineage graph tracing, which means the direction of all
+          hops in the tracing.
+            An UPSTREAM hop means an expansion following the path of
+              execution -> output_event -> artifact or
+              artifact -> input_event -> execution
+            A DOWNSTREAM hop means an expansion following the path of
+              execution -> input_event -> artifact or
+              artifact -> output_event -> execution
+          Please refer to `Direction` for more details.
+    description: The query options for lineage graph tracing from a list of interested nodes.
+  ml_metadataListArtifactStructType:
+    type: object
+    properties:
+      element:
+        $ref: '#/definitions/ml_metadataArtifactStructType'
+        description: |-
+          Every entry in the list must be of this type.
+          Note: if this type is Any, then the list can have arbitrary elements.
+    description: Represents an ArtifactStruct list type with homogeneous elements.
+  ml_metadataListOperationOptions:
+    type: object
+    properties:
+      max_result_size:
+        type: integer
+        format: int32
+        description: |-
+          Max number of resources to return in the result. A value of zero or less
+          results in a InvalidArgumentError.
+          The API implementation also enforces an upper-bound of 100, and picks the
+          minimum between this value and the one specified here.
+      order_by_field:
+        $ref: '#/definitions/ListOperationOptionsOrderByField'
+        description: Ordering field.
+      next_page_token:
+        type: string
+        description: Identifies the next page of results.
+      filter_query:
+        type: string
+        description: |-
+          A boolean expression in SQL syntax that is used to specify the conditions
+          on node attributes and directly connected assets.
+
+          In the current implementation, filtering Artifact/Execution/Context with
+          the following attributes and neighborhood is supported:
+
+          Attributes:
+              id:int64, type_id:int64, type:string,
+              uri:string, name: string, external_id: string,
+              create_time_since_epoch:int64, last_update_time_since_epoch:int64
+              state:ENUM (Artifact only) last_known_state:ENUM (Execution only)
+
+          Neighborhood
+          - Properties and Custom Properties (for all node types):
+            syntax: properties.$name ($name is the property name)
+                    custom_properties.$name ($name is the custom property name)
+            attributes: the following attributes can be used
+               int_value: int64, double_value: double, string_value: string
+               bool_value: bool
+
+          - Context (for Artifact and Execution):
+            syntax: contexts_$alias ($alias can be [0-9A-Za-z_])
+            attributes: the following attributes can be used
+               id:int64, name:string, type:string, create_time_since_epoch:int64,
+               last_update_time_since_epoch: int64
+
+          - Parent and Child Contexts (for Contexts):
+            syntax: parent_contexts_$alias( $alias can be [0-9A-Za-z_]
+                    child_contexts_$alias( $alias can be [0-9A-Za-z_]
+            attributes: the following attributes can be used
+               id:int64, name: string, type:string
+
+          - Event (for Artifact and Execution)
+            syntax: events_$alias ($alias can be [0-9A-Za-z_])
+            attributes: the following attributes can be used
+              artifact_id: int64(Execution only), execution_id: int64(Artifact only),
+              type: ENUM, milliseconds_since_epoch: int64
+
+          Examples:
+          a) to filter nodes attributes:
+             - id != 1
+             - id IN (1, 3)
+             - type_id = 5
+             - type = 'my_type_name'
+             - name = 'foo'
+             - type = 'bar' AND name LIKE 'foo%'
+             - external_id = 'my_external_id'
+             - NOT(create_time_since_epoch < 1 OR last_update_time_since_epoch < 1)
+
+          b) to filter artifacts' uri
+             - uri = 'exact_path_string'
+             - uri LIKE 'path_like_this%'
+             - uri IS NOT NULL
+
+          c) to filter artifact's state or execution's last_known_state
+             - state = LIVE
+             - state IS NULL
+             - state IN (PENDING, LIVE)
+             - last_known_state = RUNNING
+             - last_known_state != RUNNING
+             - last_known_state NOT IN (FAILED, CANCELED)
+
+          d) to filter nodes having a specific context, artifact, or execution
+             - contexts_a.id = 5
+             - contexts_a.type = 'RunContext'
+             - contexts_a.name = 'my_run'
+             - contexts_a.create_time_since_epoch = 1626761453
+             - contexts_a.last_update_time_since_epoch = 1626761453
+             To filter nodes with conditions on multiple contexts:
+             - contexts_a.name = 'my_run' AND contexts_b.name = 'my_pipeline'
+             To filter context with artifacts:
+             - artifacts_a.id = 5
+             - artifacts_a.type = 'Dataset'
+             - artifacts_a.name = 'my_dataset'
+             - artifacts_a.uri = 'exact_path_string'
+             - artifacts_a.state = LIVE
+             - artifacts_a.state IN (PENDING, LIVE)
+             - artifacts_a.external_id = "my_external_id"
+             - artifacts_a.create_time_since_epoch = 1626761453
+             - artifacts_a.last_update_time_since_epoch = 1626761453
+             To filter contexts with conditions on multiple artifacts:
+             - artifacts_a.name = 'my_run' AND artifacts_b.name = 'my_pipeline'
+             To filter context with executions:
+             - executions_a.id = 5
+             - executions_a.type = 'Dataset'
+             - executions_a.name = 'my_dataset'
+             - executions_a.last_known_state = RUNNING
+          .   - executions_a.last_known_state IN (NEW, RUNNING)
+             - executions_a.external_id = "my_external_id"
+             - executions_a.create_time_since_epoch = 1626761453
+             - executions_a.last_update_time_since_epoch = 1626761453
+             To filter contexts with conditions on multiple executions:
+             - executions_a.name = 'my_run' AND executions_b.name = 'my_pipeline'
+
+          e) to filter nodes condition on their properties
+             - properties.accuracy.double_value > 0.95
+             - custom_properties.my_param.string_value = "foo"
+             If the name of the property or custom property includes characters
+             other than [0-9A-Za-z_], then the name need to be backquoted,
+             e.g.,
+             - properties.`my property`.int_value > 0
+             - custom_properties.`my:custom.property`.bool_value = true
+
+          f) complex query to filter both node attributes and neighborhood
+             - type = 'DataSet' AND
+               (contexts_a.type = 'RunContext' AND contexts_a.name = 'my_run') AND
+               (properties.span = 1 OR custom_properties.span = 1)
+
+          g) to filter parent/child context
+             - parent_contexts_a.id = 5
+             - child_contexts_a.type = 'RunContext'
+             - parent_contexts_a.name = 'parent_context_1'
+
+          h) to filter Artifacts on Events
+             - events_0.execution_id = 1
+             - events_0.type = INPUT
+             - events_0.milliseconds_since_epoch = 1
+             to filter Executions on Events
+             - events_0.artifact_id = 1
+             - events_0.type IN (INPUT, INTERNAL_INPUT)
+             - events_0.milliseconds_since_epoch = 1
+          TODO(b/145945460) Support filtering on event step fields.
+    description: |-
+      ListOperationOptions represents the set of options and predicates to be
+      used for List operations on Artifacts, Executions and Contexts.
+  ml_metadataNoneArtifactStructType:
+    type: object
+    title: |-
+      The only member of this type is a None artifact.
+      Note: ArtifactStruct{} is a None artifact.
+      This can represent an execution that has no outputs (or inputs),
+      or can be part of a UnionArtifactStructType to represent an optional
+      input.
+      For example, StatsGen has an "optional" schema input.
+      A practical example of this is:
+      stats_gen_type = {
+          "dict":{
+             "properties":{
+               "schema":{
+                 "union_type":{
+                   "none":{},
+                   "simple":{...schema type...}
+                  },
+               },
+               "data":{
+                 "simple":{...data_type...}
+               }
+            }
+          }
+      };
+  ml_metadataParentContext:
+    type: object
+    properties:
+      child_id:
+        type: string
+        format: int64
+      parent_id:
+        type: string
+        format: int64
+    description: the Parental Context edges between Context and Context instances.
+  ml_metadataPropertyType:
+    type: string
+    enum:
+      - UNKNOWN
+      - INT
+      - DOUBLE
+      - STRING
+      - STRUCT
+      - PROTO
+      - BOOLEAN
+    default: UNKNOWN
+    description: |-
+      The list of supported property value types.
+
+       - STRUCT: Prefer to use `PROTO` to store structed data since this option has
+      inefficient database storage usage.
+  ml_metadataPutArtifactTypeRequest:
+    type: object
+    properties:
+      artifact_type:
+        $ref: '#/definitions/ml_metadataArtifactType'
+        description: |-
+          The field is required in any request. Stored types in MLMD can be updated
+          by introducing new properties and remain backward compatible. If a type
+          with the same name exists in the database, it updates the existing type,
+          otherwise it creates a new type.
+      can_add_fields:
+        type: boolean
+        description: |-
+          If true then allows adding properties to an existing stored type.
+          If false, then type update is not allowed and it raises AlreadyExists
+          error if the given type has any new property that is not defined in the
+          stored type.
+      can_omit_fields:
+        type: boolean
+        description: |-
+          If true then allows omitting properties of an existing stored type.
+          If false, then no properties of the stored type can be omitted in the
+          given type, otherwise it raises AlreadyExists error.
+      can_delete_fields:
+        type: boolean
+        description: Deprecated fields.
+      all_fields_match:
+        type: boolean
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutArtifactTypeResponse:
+    type: object
+    properties:
+      type_id:
+        type: string
+        format: int64
+        description: The type ID of the artifact type.
+  ml_metadataPutArtifactsRequest:
+    type: object
+    properties:
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+      options:
+        $ref: '#/definitions/ml_metadataPutArtifactsRequestOptions'
+        description: Additional options to change the behavior of the method.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+      update_mask:
+        type: string
+        title: |-
+          FieldMask for artifacts in the PUT update
+          If `artifact.id` is not specified, it means a new artifact will be created
+          and `update_mask` will not be applied to the creation.
+          If `update_mask` is empty, update the artifacts as a whole.
+          If `update_mask` is not empty, only update fields or properties specified
+          in `update_mask`.
+          Example request protos:
+          1. Examples that update `properties` / `custom_properties`:
+            1.1 Add a <'key', 'val'> pair into `custom_properties`:
+               {
+                 artifacts {
+                   id: 1234
+                   type_id: 5678
+                   custom_properties {
+                     key: "key"
+                     value: {
+                       string_value: "val"
+                     }
+                   }
+                 }
+                 update_mask {
+                   paths: "custom_properties.key"
+                 }
+               }
+            1.2 Set `custom_properties['key'].bool_value` to true:
+               {
+                 artifacts {
+                   id: 1234
+                   type_id: 5678
+                   custom_properties {
+                     key: "key"
+                     value: {
+                       bool_value: true
+                     }
+                   }
+                 }
+                 update_mask {
+                   paths: "custom_properties.key"
+                 }
+               }
+            1.3 Delete the complete <'key', 'val'> pair from `custom_properties`:
+               {
+                 artifacts {
+                   id: 1234
+                   type_id: 5678
+                   custom_properties {}
+                 }
+                 update_mask {
+                   paths: "custom_properties.key"
+                 }
+               }
+          2. Examples that update fields such as `uri`, `external_id`, etc:
+            2.1 Update `external_id` field:
+               {
+                 artifacts {
+                   id: 1234
+                   type_id: 5678
+                   external_id: "new_value"
+                 }
+                 update_mask {
+                   paths: "external_id"
+                 }
+               }
+            2.2 Set `uri` field:
+               {
+                 artifacts {
+                   id: 1234
+                   type_id: 5678
+                   uri: "set_value"
+                 }
+                 update_mask {
+                   paths: "uri"
+                 }
+               }
+          If `paths: "properties"` or `paths: "custom_properties"` are added to
+          `update_mask`, the key-level updates will be ignored and we only perform
+          field-level updates on the all `properties`/`custom_properties`.
+          For example:
+            If the mask is: {"properties", "properties.key1"}, the field path
+            "properties.key1" will be ignored and all `properties` will be updated.
+            (Do not suggest)
+            If the mask is {"properties", "external_id"}, all
+            `properties` and field `external_id` will be updated. (Do not suggest)
+  ml_metadataPutArtifactsRequestOptions:
+    type: object
+    properties:
+      abort_if_latest_updated_time_changed:
+        type: boolean
+        description: |-
+          When there are multiple writers to update an existing node to
+          different states, there may be a race and the end result of the
+          concurrent update is nondeterministic. If the field is set, then an
+          optimistic concurrency control (OCC) scheme is used during update:
+          it compares the `artifact`.`last_update_time_since_epoch` in the request
+          with the stored `last_update_time_since_epoch` having the same
+          `artifact`.`id`. If they are different, the request fails, and the user
+          can read the stored node and retry node update.
+          When the option is set, the timestamp after update is guaranteed to be
+          increased and different from the input artifact.
+          When set the option, the caller should set it for all concurrent writers.
+  ml_metadataPutArtifactsResponse:
+    type: object
+    properties:
+      artifact_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of artifact ids index-aligned with PutArtifactsRequest.
+  ml_metadataPutAttributionsAndAssociationsRequest:
+    type: object
+    properties:
+      attributions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataAttribution'
+      associations:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataAssociation'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutAttributionsAndAssociationsResponse:
+    type: object
+  ml_metadataPutContextTypeRequest:
+    type: object
+    properties:
+      context_type:
+        $ref: '#/definitions/ml_metadataContextType'
+        description: |-
+          The field is required in any request. Stored types in MLMD can be updated
+          by introducing new properties and remain backward compatible. If a type
+          with the same name exists in the database, it updates the existing type,
+          otherwise it creates a new type.
+      can_add_fields:
+        type: boolean
+        description: |-
+          If true then allows adding properties to an existing stored type.
+          If false, then type update is not allowed and it raises AlreadyExists
+          error if the given type has any new property that is not defined in the
+          stored type.
+      can_omit_fields:
+        type: boolean
+        description: |-
+          If true then allows omitting properties of an existing stored type.
+          If false, then no properties of the stored type can be omitted in the
+          given type, otherwise it raises AlreadyExists error.
+      can_delete_fields:
+        type: boolean
+        description: Deprecated fields.
+      all_fields_match:
+        type: boolean
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutContextTypeResponse:
+    type: object
+    properties:
+      type_id:
+        type: string
+        format: int64
+        description: The type ID of the context type.
+  ml_metadataPutContextsRequest:
+    type: object
+    properties:
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+      update_mask:
+        type: string
+        description: |-
+          FieldMask for contexts in the PUT update
+          If `context.id` is not specified, it means a new context will be
+          created and `update_mask` will not be applied to the creation.
+          If `update_mask` is empty, update the contexts as a whole.
+          If `update_mask` is not empty, only update fields or properties specified
+          in `update_mask`.
+          Example request protos:
+            1. Add a <'key', 'val'> pair into `custom_properties`:
+               {
+                 contexts {
+                   id: 1234
+                   type_id: 5678
+                   custom_properties {
+                     key: "key"
+                     value: {
+                       string_value: "val"
+                     }
+                   }
+                 }
+                 update_mask {
+                   paths: "custom_properties.key"
+                 }
+               }
+            2. Set `name` field:
+               {
+                 contexts {
+                   id: 1234
+                   type_id: 5678
+                   name: "set_name"
+                 }
+                 update_mask {
+                   paths: "name"
+                 }
+               }
+          Please refer to `PutArtifactsRequest` for more details.
+  ml_metadataPutContextsResponse:
+    type: object
+    properties:
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of context ids index-aligned with PutContextsRequest.
+  ml_metadataPutEventsRequest:
+    type: object
+    properties:
+      events:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataEvent'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutEventsResponse:
+    type: object
+  ml_metadataPutExecutionRequest:
+    type: object
+    properties:
+      execution:
+        $ref: '#/definitions/ml_metadataExecution'
+        description: The execution that produces many artifact and event pairs.
+      artifact_event_pairs:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/PutExecutionRequestArtifactAndEvent'
+        description: The list of artifact and event pairs.
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+        description: |-
+          A list of contexts associated with the execution and artifacts. For each
+          given context without a context.id, it inserts the context, otherwise it
+          updates the stored context with the same id.
+          Associations between each pair of contexts and the execution, and
+          attributions between each pair of contexts and artifacts are created if
+          they do not already exist.
+      options:
+        $ref: '#/definitions/ml_metadataPutExecutionRequestOptions'
+        description: Additional options to change the behavior of the method.
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutExecutionRequestOptions:
+    type: object
+    properties:
+      reuse_context_if_already_exist:
+        type: boolean
+        description: |-
+          When there's a race to publish executions with a new context with the
+          same context.name, by default there'll be one writer succeeds and
+          the rest of the writers returning AlreadyExists errors. If set to true,
+          the API will reuse the stored context in the transaction and perform
+          an update.
+      reuse_artifact_if_already_exist_by_external_id:
+        type: boolean
+        description: |-
+          When there's a race to publish executions with a new artifact with the
+          same artifact.external_id, by default there'll be one writer succeeds and
+          the rest of the writers returning AlreadyExists errors.
+          If set to true and an Artifact has non-empty external_id,
+          the API will reuse the stored artifact in the transaction and
+          perform an update. Otherwise, it will fall back to relying on `id` field
+          to decide if it's update (if `id` exists) or insert (if `id` is empty).
+  ml_metadataPutExecutionResponse:
+    type: object
+    properties:
+      execution_id:
+        type: string
+        format: int64
+        description: An execution id of the `execution` in PutExecutionRequest.
+      artifact_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: |-
+          A list of artifact ids index-aligned with `artifact_event_pairs` in the
+          PutExecutionRequest.
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: |-
+          A list of context ids index-aligned with `contexts` in the
+          PutExecutionRequest.
+  ml_metadataPutExecutionTypeRequest:
+    type: object
+    properties:
+      execution_type:
+        $ref: '#/definitions/ml_metadataExecutionType'
+        description: |-
+          The field is required in any request. Stored types in MLMD can be updated
+          by introducing new properties and remain backward compatible. If a type
+          with the same name exists in the database, it updates the existing type,
+          otherwise it creates a new type.
+      can_add_fields:
+        type: boolean
+        description: |-
+          If true then allows adding properties to an existing stored type.
+          If false, then type update is not allowed and it raises AlreadyExists
+          error if the given type has any new property that is not defined in the
+          stored type.
+      can_omit_fields:
+        type: boolean
+        description: |-
+          If true then allows omitting properties of an existing stored type.
+          If false, then no properties of the stored type can be omitted in the
+          given type, otherwise it raises AlreadyExists error.
+      can_delete_fields:
+        type: boolean
+        description: Deprecated fields.
+      all_fields_match:
+        type: boolean
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutExecutionTypeResponse:
+    type: object
+    properties:
+      type_id:
+        type: string
+        format: int64
+        description: The type ID of the execution type.
+  ml_metadataPutExecutionsRequest:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+      update_mask:
+        type: string
+        description: |-
+          FieldMask for executions in the PUT update
+          If `execution.id` is not specified, it means a new execution will be
+          created and `update_mask` will not be applied to the creation.
+          If `update_mask` is empty, update the executions as a whole.
+          If `update_mask` is not empty, only update fields or properties specified
+          in `update_mask`.
+          Example request protos:
+            1. Add a <'key', 'val'> pair into `custom_properties`:
+               {
+                 executions {
+                   id: 1234
+                   type_id: 5678
+                   custom_properties {
+                     key: "key"
+                     value: {
+                       string_value: "val"
+                     }
+                   }
+                 }
+                 update_mask {
+                   paths: "custom_properties.key"
+                 }
+               }
+            2. Set `last_known_state` field:
+               {
+                 executions {
+                   id: 1234
+                   type_id: 5678
+                   last_known_state: CACHED
+                 }
+                 update_mask {
+                   paths: "last_known_state"
+                 }
+               }
+          Please refer to `PutArtifactsRequest` for more details.
+  ml_metadataPutExecutionsResponse:
+    type: object
+    properties:
+      execution_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: A list of execution ids index-aligned with PutExecutionsRequest.
+  ml_metadataPutLineageSubgraphRequest:
+    type: object
+    properties:
+      executions:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecution'
+      artifacts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifact'
+      contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContext'
+      event_edges:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/PutLineageSubgraphRequestEventEdge'
+      options:
+        $ref: '#/definitions/ml_metadataPutLineageSubgraphRequestOptions'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+  ml_metadataPutLineageSubgraphRequestOptions:
+    type: object
+    properties:
+      reuse_context_if_already_exist:
+        type: boolean
+        description: |-
+          When there's a race to publish executions with a new context with the
+          same context.name, by default there'll be one writer succeeds and
+          the rest of the writers returning AlreadyExists errors. If set to true,
+          the API will reuse the stored context in the transaction and perform
+          an update.
+      reuse_artifact_if_already_exist_by_external_id:
+        type: boolean
+        description: |-
+          When there's a race to publish executions with a new artifact with the
+          same artifact.external_id, by default there'll be one writer succeeds and
+          the rest of the writers returning AlreadyExists errors.
+          If set to true and an Artifact has non-empty external_id,
+          the API will reuse the stored artifact in the transaction and
+          perform an update. Otherwise, it will fall back to relying on `id` field
+          to decide if it's update (if `id` exists) or insert (if `id` is empty).
+  ml_metadataPutLineageSubgraphResponse:
+    type: object
+    properties:
+      execution_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        title: A list of execution ids index-aligned with `executions` in the request
+      artifact_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        title: A list of artifact ids index-aligned with `artifacts` in the request
+      context_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        title: A list of context ids index-aligned with `contexts` in the request
+  ml_metadataPutParentContextsRequest:
+    type: object
+    properties:
+      parent_contexts:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataParentContext'
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutParentContextsResponse:
+    type: object
+  ml_metadataPutTypesRequest:
+    type: object
+    properties:
+      artifact_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactType'
+      execution_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataExecutionType'
+      context_types:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataContextType'
+      can_add_fields:
+        type: boolean
+        description: |-
+          If true then allows adding properties to an existing stored type.
+          If false, then type update is not allowed and it raises AlreadyExists
+          error if the given type has any new property that is not defined in the
+          stored type.
+      can_omit_fields:
+        type: boolean
+        description: |-
+          If true then allows omitting properties of an existing stored type.
+          If false, then no properties of the stored type can be omitted in the
+          given type, otherwise it raises AlreadyExists error.
+      can_delete_fields:
+        type: boolean
+        description: Deprecated fields.
+      all_fields_match:
+        type: boolean
+      transaction_options:
+        $ref: '#/definitions/ml_metadataTransactionOptions'
+        description: Options regarding transactions.
+  ml_metadataPutTypesResponse:
+    type: object
+    properties:
+      artifact_type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: The type ids of the artifact type.
+      execution_type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: The type ids of the execution type.
+      context_type_ids:
+        type: array
+        items:
+          type: string
+          format: int64
+        description: The type ids of the context type.
+  ml_metadataTransactionOptions:
+    type: object
+    properties:
+      tag:
+        type: string
+        description: Transaction tag for debug use only.
+    description: |-
+      Options for transactions.
+      Note: This is under development. Clients should not use it.
+  ml_metadataTupleArtifactStructType:
+    type: object
+    properties:
+      elements:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactStructType'
+    description: |-
+      An ordered list of heterogeneous artifact structs.
+      The length of the list is fixed.
+      Each position in the list can have a different type.
+  ml_metadataUnionArtifactStructType:
+    type: object
+    properties:
+      candidates:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/ml_metadataArtifactStructType'
+        description: |-
+          An artifact struct matches this type if it matches any of the candidates.
+          If candidates is empty, this is a bottom type (matches no artifacts).
+    description: Represents a union of types.
+  ml_metadataValue:
+    type: object
+    properties:
+      int_value:
+        type: string
+        format: int64
+      double_value:
+        type: number
+        format: double
+      string_value:
+        type: string
+      struct_value:
+        type: object
+      proto_value:
+        $ref: '#/definitions/protobufAny'
+      bool_value:
+        type: boolean
+    description: A value in properties.
+  protobufAny:
+    type: object
+    properties:
+      '@type':
+        type: string
+        description: |-
+          A URL/resource name that uniquely identifies the type of the serialized
+          protocol buffer message. This string must contain at least
+          one "/" character. The last segment of the URL's path must represent
+          the fully qualified name of the type (as in
+          `path/google.protobuf.Duration`). The name should be in a canonical form
+          (e.g., leading "." is not accepted).
+
+          In practice, teams usually precompile into the binary all types that they
+          expect it to use in the context of Any. However, for URLs which use the
+          scheme `http`, `https`, or no scheme, one can optionally set up a type
+          server that maps type URLs to message definitions as follows:
+
+          * If no scheme is provided, `https` is assumed.
+          * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+            value in binary format, or produce an error.
+          * Applications are allowed to cache lookup results based on the
+            URL, or have them precompiled into a binary to avoid any
+            lookup. Therefore, binary compatibility needs to be preserved
+            on changes to types. (Use versioned type names to manage
+            breaking changes.)
+
+          Note: this functionality is not currently available in the official
+          protobuf release, and it is not used for type URLs beginning with
+          type.googleapis.com. As of May 2023, there are no widely used type server
+          implementations and no plans to implement one.
+
+          Schemes other than `http`, `https` (or the empty scheme) might be
+          used with implementation specific semantics.
+    additionalProperties: {}
+    description: |-
+      `Any` contains an arbitrary serialized protocol buffer message along with a
+      URL that describes the type of the serialized message.
+
+      Protobuf library provides support to pack/unpack Any values in the form
+      of utility functions or additional generated methods of the Any type.
+
+      Example 1: Pack and unpack a message in C++.
+
+          Foo foo = ...;
+          Any any;
+          any.PackFrom(foo);
+          ...
+          if (any.UnpackTo(&foo)) {
+            ...
+          }
+
+      Example 2: Pack and unpack a message in Java.
+
+          Foo foo = ...;
+          Any any = Any.pack(foo);
+          ...
+          if (any.is(Foo.class)) {
+            foo = any.unpack(Foo.class);
+          }
+          // or ...
+          if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+            foo = any.unpack(Foo.getDefaultInstance());
+          }
+
+       Example 3: Pack and unpack a message in Python.
+
+          foo = Foo(...)
+          any = Any()
+          any.Pack(foo)
+          ...
+          if any.Is(Foo.DESCRIPTOR):
+            any.Unpack(foo)
+            ...
+
+       Example 4: Pack and unpack a message in Go
+
+           foo := &pb.Foo{...}
+           any, err := anypb.New(foo)
+           if err != nil {
+             ...
+           }
+           ...
+           foo := &pb.Foo{}
+           if err := any.UnmarshalTo(foo); err != nil {
+             ...
+           }
+
+      The pack methods provided by protobuf library will by default use
+      'type.googleapis.com/full.type.name' as the type URL and the unpack
+      methods only use the fully qualified type name after the last '/'
+      in the type URL, for example "foo.bar.com/x/y.z" will yield type
+      name "y.z".
+
+      JSON
+      ====
+      The JSON representation of an `Any` value uses the regular
+      representation of the deserialized, embedded message, with an
+      additional field `@type` which contains the type URL. Example:
+
+          package google.profile;
+          message Person {
+            string first_name = 1;
+            string last_name = 2;
+          }
+
+          {
+            "@type": "type.googleapis.com/google.profile.Person",
+            "firstName": <string>,
+            "lastName": <string>
+          }
+
+      If the embedded message type is well-known and has a custom JSON
+      representation, that representation will be embedded adding a field
+      `value` which holds the custom JSON in addition to the `@type`
+      field. Example (for message [google.protobuf.Duration][]):
+
+          {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1.212s"
+          }
+  protobufNullValue:
+    type: string
+    enum:
+      - NULL_VALUE
+    default: NULL_VALUE
+    description: |-
+      `NullValue` is a singleton enumeration to represent the null value for the
+      `Value` type union.
+
+      The JSON representation for `NullValue` is JSON `null`.
+
+       - NULL_VALUE: Null value.
+  rpcStatus:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      details:
+        type: array
+        items:
+          type: object
+          $ref: '#/definitions/protobufAny'
