@@ -1,8 +1,10 @@
+// TODO when refactoring to migrate to service/db_service usage, this should move inside service/ too.
 package server
 
 import (
 	"context"
 	"fmt"
+
 	"gorm.io/gorm"
 )
 
