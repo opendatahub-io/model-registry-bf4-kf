@@ -37,21 +37,25 @@ func setup(tmpFile *os.File) (*gorm.DB, error) {
 }
 
 // Bare minimal test of PutArtifactType with a given Name, and Get.
-func TestPutArtifactTypeThenGet(t *testing.T) {
+func TestInsertTypeThenReadAllType(t *testing.T) {
 	f, err := os.CreateTemp("", "model-registry-db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.Remove(f.Name())
-	db, err := setup(f)
+	dbc, err := setup(f)
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
-	dal := Handle{
-		db: db,
-	}
+	dal := NewDBService(dbc)
+
 	artifactName := "John Doe"
-	at, err := dal.CreateArtifactType(artifactName, nil)
+	newType := db.Type{
+		Name:     artifactName,
+		TypeKind: int32(ARTIFACT_TYPE),
+	}
+
+	at, err := dal.InsertType(newType)
 	if err != nil {
 		t.Errorf("Should create ArtifactType: %v", err)
 	}
@@ -62,7 +66,7 @@ func TestPutArtifactTypeThenGet(t *testing.T) {
 		t.Errorf("Should have Name for ArtifactType per constant: %v", at.Name)
 	}
 
-	ats, err2 := dal.GetArtifactTypes(nil, &artifactName, nil)
+	ats, err2 := dal.ReadAllType(newType)
 	if err2 != nil {
 		t.Errorf("Should get ArtifactType: %v", err2)
 	}
@@ -80,30 +84,28 @@ func TestPutArtifactTypeThenGet(t *testing.T) {
 
 }
 
-func TestGetArtifactTypesByCommonCriteria(t *testing.T) {
+func TestReadAllType(t *testing.T) {
 	f, err := os.CreateTemp("", "model-registry-db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.Remove(f.Name())
-	db, err := setup(f)
+	dbc, err := setup(f)
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
-	dal := Handle{
-		db: db,
-	}
+	dal := NewDBService(dbc)
 
 	fixVersion := "version"
-	if _, err := dal.CreateArtifactType("at0", &fixVersion); err != nil {
+
+	if _, err := dal.InsertType(db.Type{Name: "at0", Version: &fixVersion, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should create ArtifactType: %v", err)
 	}
-	if _, err := dal.CreateArtifactType("at1", &fixVersion); err != nil {
+	if _, err := dal.InsertType(db.Type{Name: "at1", Version: &fixVersion, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should create ArtifactType: %v", err)
 	}
 
-	// TODO here only demonstrating criteria using "version", but likely more meaningful to use property as criteria
-	results, err := dal.GetArtifactTypes(nil, nil, &fixVersion)
+	results, err := dal.ReadAllType(db.Type{Version: &fixVersion})
 	t.Logf("results: %v", results)
 	if err != nil {
 		t.Errorf("Should get ArtifactTypes: %v", err)
@@ -113,37 +115,28 @@ func TestGetArtifactTypesByCommonCriteria(t *testing.T) {
 	}
 }
 
-func TestPutArtifactTypeSameNameDiffVersion(t *testing.T) {
+func TestUpsertType(t *testing.T) {
 	f, err := os.CreateTemp("", "model-registry-db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer os.Remove(f.Name())
-	db, err := setup(f)
+	dbc, err := setup(f)
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
-	dal := Handle{
-		db: db,
-	}
+	dal := NewDBService(dbc)
 
 	artifactName := "John Doe"
 	v0 := "v0"
 	v1 := "v1"
-	at0, err := dal.CreateArtifactType(artifactName, &v0)
-	if err != nil {
-		t.Errorf("Should create ArtifactType: %v", err)
+	if _, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+		t.Errorf("Should Insert ArtifactType: %v", err)
 	}
-	at1, err := dal.CreateArtifactType(artifactName, &v1)
-	if err != nil {
-		t.Errorf("Should create ArtifactType: %v", err)
+	if res, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int32(ARTIFACT_TYPE)}); err == nil {
+		t.Errorf("Subsequent Insert must have failed: %v", res)
 	}
-	if at0.ID > at1.ID {
-		t.Errorf("ID invariant does not hold")
+	if _, err := dal.UpsertType(db.Type{Name: artifactName, Version: &v1, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+		t.Errorf("Should Upsert ArtifactType: %v", err)
 	}
-
-	// TODO implement validation logic or RDBMS constraint/key
-	// if _, err := dal.CreateArtifactType(artifactName, &v1); err == nil {
-	// 	t.Errorf("Created multiple artifact with the same version")
-	// }
 }
