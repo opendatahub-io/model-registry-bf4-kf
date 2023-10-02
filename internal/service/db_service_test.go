@@ -52,7 +52,7 @@ func TestInsertTypeThenReadAllType(t *testing.T) {
 	artifactName := "John Doe"
 	newType := db.Type{
 		Name:     artifactName,
-		TypeKind: int32(ARTIFACT_TYPE),
+		TypeKind: int8(ARTIFACT_TYPE),
 	}
 
 	at, err := dal.InsertType(newType)
@@ -98,10 +98,10 @@ func TestReadAllType(t *testing.T) {
 
 	fixVersion := "version"
 
-	if _, err := dal.InsertType(db.Type{Name: "at0", Version: &fixVersion, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+	if _, err := dal.InsertType(db.Type{Name: "at0", Version: &fixVersion, TypeKind: int8(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should create ArtifactType: %v", err)
 	}
-	if _, err := dal.InsertType(db.Type{Name: "at1", Version: &fixVersion, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+	if _, err := dal.InsertType(db.Type{Name: "at1", Version: &fixVersion, TypeKind: int8(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should create ArtifactType: %v", err)
 	}
 
@@ -130,13 +130,13 @@ func TestUpsertType(t *testing.T) {
 	artifactName := "John Doe"
 	v0 := "v0"
 	v1 := "v1"
-	if _, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+	if _, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int8(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should Insert ArtifactType: %v", err)
 	}
-	if res, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int32(ARTIFACT_TYPE)}); err == nil {
+	if res, err := dal.InsertType(db.Type{Name: artifactName, Version: &v0, TypeKind: int8(ARTIFACT_TYPE)}); err == nil {
 		t.Errorf("Subsequent Insert must have failed: %v", res)
 	}
-	if _, err := dal.UpsertType(db.Type{Name: artifactName, Version: &v1, TypeKind: int32(ARTIFACT_TYPE)}); err != nil {
+	if _, err := dal.UpsertType(db.Type{Name: artifactName, Version: &v1, TypeKind: int8(ARTIFACT_TYPE)}); err != nil {
 		t.Errorf("Should Upsert ArtifactType: %v", err)
 	}
 }

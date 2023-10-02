@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/opendatahub-io/model-registry/internal/model/db"
-	"github.com/opendatahub-io/model-registry/internal/server"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +13,7 @@ type typeHandler struct {
 }
 
 func (h *typeHandler) InsertType(i db.Type) (r *db.Type, err error) {
-	ctx, _ := server.Begin(context.Background(), h.db)
+	ctx, _ := Begin(context.Background(), h.db)
 	defer handleTransaction(ctx, &err)
 
 	result := h.db.Create(&i)
@@ -25,7 +24,7 @@ func (h *typeHandler) InsertType(i db.Type) (r *db.Type, err error) {
 }
 
 func (h *typeHandler) UpsertType(i db.Type) (r *db.Type, err error) {
-	ctx, _ := server.Begin(context.Background(), h.db)
+	ctx, _ := Begin(context.Background(), h.db)
 	defer handleTransaction(ctx, &err)
 
 	if err := h.db.Where("name = ?", i.Name).Assign(i).FirstOrCreate(&i).Error; err != nil {
