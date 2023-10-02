@@ -2,8 +2,6 @@ package service
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"testing"
 
 	"github.com/opendatahub-io/model-registry/internal/model/db"
@@ -24,8 +22,8 @@ func migrateDatabase(dbConn *gorm.DB) error {
 	return nil
 }
 
-func setup(tmpFile *os.File) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(tmpFile.Name()), &gorm.Config{})
+func setup() (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,15 +36,17 @@ func setup(tmpFile *os.File) (*gorm.DB, error) {
 
 // Bare minimal test of PutArtifactType with a given Name, and Get.
 func TestInsertTypeThenReadAllType(t *testing.T) {
-	f, err := os.CreateTemp("", "model-registry-db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(f.Name())
-	dbc, err := setup(f)
+	dbc, err := setup()
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
+	defer func() {
+		dbi, err := dbc.DB()
+		if err != nil {
+			t.Errorf("Test need to clear sqlite DB for the next one, but errored: %v", err)
+		}
+		dbi.Close()
+	}()
 	dal := NewDBService(dbc)
 
 	artifactName := "John Doe"
@@ -85,15 +85,17 @@ func TestInsertTypeThenReadAllType(t *testing.T) {
 }
 
 func TestReadAllType(t *testing.T) {
-	f, err := os.CreateTemp("", "model-registry-db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(f.Name())
-	dbc, err := setup(f)
+	dbc, err := setup()
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
+	defer func() {
+		dbi, err := dbc.DB()
+		if err != nil {
+			t.Errorf("Test need to clear sqlite DB for the next one, but errored: %v", err)
+		}
+		dbi.Close()
+	}()
 	dal := NewDBService(dbc)
 
 	fixVersion := "version"
@@ -116,15 +118,17 @@ func TestReadAllType(t *testing.T) {
 }
 
 func TestUpsertType(t *testing.T) {
-	f, err := os.CreateTemp("", "model-registry-db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer os.Remove(f.Name())
-	dbc, err := setup(f)
+	dbc, err := setup()
 	if err != nil {
 		t.Errorf("Should expect DB connection: %v", err)
 	}
+	defer func() {
+		dbi, err := dbc.DB()
+		if err != nil {
+			t.Errorf("Test need to clear sqlite DB for the next one, but errored: %v", err)
+		}
+		dbi.Close()
+	}()
 	dal := NewDBService(dbc)
 
 	artifactName := "John Doe"
