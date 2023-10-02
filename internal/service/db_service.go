@@ -33,15 +33,6 @@ type DBService interface {
 	// DeleteEEE(db.EEE) (*db.EEE, error)
 }
 
-type TypeKind int32
-
-// TODO: move from grpc to just here
-const (
-	EXECUTION_TYPE TypeKind = iota
-	ARTIFACT_TYPE
-	CONTEXT_TYPE
-)
-
 type dbServiceHandler struct {
 	*typeHandler
 	*artifactHandler
