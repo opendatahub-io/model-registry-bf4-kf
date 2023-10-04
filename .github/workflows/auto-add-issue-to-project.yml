@@ -1,4 +1,4 @@
-name: Add Issues to  Model Registry ODH board Project
+name: Add Issues to Model Registry ODH board Project
 on:
   issues:
     types:
