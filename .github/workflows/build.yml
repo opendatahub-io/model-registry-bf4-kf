@@ -30,10 +30,6 @@ jobs:
         run: make clean
       - name: Build
         run: make build
-      - name: Demonstrate problem1 of 2
-        run: touch asd1
-      - name: Demonstrate problem2 of 2
-        run: touch asd2
       - name: Check if there are uncommitted file changes
         run: |
           clean=$(git status --porcelain)
