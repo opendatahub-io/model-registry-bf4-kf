@@ -51,6 +51,8 @@ paths:
         -
           $ref: '#/components/parameters/orderBy'
         -
+          $ref: '#/components/parameters/sortOrder'
+        -
           $ref: '#/components/parameters/nextPageToken'
       responses:
         '200':
@@ -154,6 +156,8 @@ paths:
           $ref: '#/components/parameters/pageSize'
         -
           $ref: '#/components/parameters/orderBy'
+        -
+          $ref: '#/components/parameters/sortOrder'
         -
           $ref: '#/components/parameters/nextPageToken'
       responses:
@@ -280,6 +284,8 @@ paths:
         -
           $ref: '#/components/parameters/orderBy'
         -
+          $ref: '#/components/parameters/sortOrder'
+        -
           $ref: '#/components/parameters/nextPageToken'
       responses:
         '200':
@@ -381,6 +387,8 @@ paths:
         -
           $ref: '#/components/parameters/orderBy'
         -
+          $ref: '#/components/parameters/sortOrder'
+        -
           $ref: '#/components/parameters/nextPageToken'
       responses:
         '200':
@@ -440,6 +448,8 @@ paths:
           $ref: '#/components/parameters/pageSize'
         -
           $ref: '#/components/parameters/orderBy'
+        -
+          $ref: '#/components/parameters/sortOrder'
         -
           $ref: '#/components/parameters/nextPageToken'
       responses:
@@ -834,13 +844,6 @@ components:
                 $ref: '#/components/schemas/Artifact'
         -
           $ref: '#/components/schemas/BaseResourceList'
-    OrderByField:
-      description: 'Supported fields for ordering result entities. '
-      enum:
-        - CREATE_TIME
-        - LAST_UPDATE_TIME
-        - ID
-      type: string
     ModelArtifactUpdate:
       description: 'An ML model artifact. '
       type: object
@@ -892,6 +895,19 @@ components:
         -
           $ref: '#/components/schemas/ModelArtifact'
       description: 'List of Artifact entities. '
+    SortOrder:
+      description: 'Supported sort direction for ordering result entities. '
+      enum:
+        - ASC
+        - DESC
+      type: string
+    OrderByField:
+      description: 'Supported fields for ordering result entities. '
+      enum:
+        - CREATE_TIME
+        - LAST_UPDATE_TIME
+        - ID
+      type: string
   responses:
     NotFound:
       content:
@@ -1018,11 +1034,23 @@ components:
       explode: true
       examples:
         orderBy:
-          value: name asc
+          value: ID
       name: orderBy
       description: Specifies the order by criteria for listing entities.
       schema:
         $ref: '#/components/schemas/OrderByField'
+      in: query
+      required: false
+    sortOrder:
+      style: form
+      explode: true
+      examples:
+        sortOrder:
+          value: DESC
+      name: sortOrder
+      description: 'Specifies the sort order for listing entities, defaults to ASC.'
+      schema:
+        $ref: '#/components/schemas/SortOrder'
       in: query
       required: false
   securitySchemes:
