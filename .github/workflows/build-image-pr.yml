@@ -1,14 +1,12 @@
 name: Test container image build
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [ '*' ]
 
 env:
   IMAGE_REPO_MR: model-registry
   QUAY_ORG: opendatahub
-  QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-  QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
 
 jobs:
   build-image:
