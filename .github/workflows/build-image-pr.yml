@@ -1,0 +1,34 @@
+name: Test container image build
+
+on:
+  pull_request_target:
+    branches: [ '*' ]
+
+env:
+  IMAGE_REPO_MR: model-registry
+  QUAY_ORG: opendatahub
+  QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+  QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Tag
+        shell: bash
+        id: tags
+        run: |
+          commit_sha=${{ github.event.after }}
+          tag=main-${commit_sha:0:7}
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
+      - name: Build Image
+        uses: ./.github/actions/build-image
+        env:
+          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.IMAGE_REPO_MR }}:${{ steps.tags.outputs.tag }}
+          TARGET_IMAGE_TAG: ${{ steps.tags.outputs.tag }}
+        with:
+          SKIP_IF_EXISTING: false
+          IMAGE_REPO: ${{ env.IMAGE_REPO_MR }}
+          DOCKERFILE: Dockerfile
+          PUSH: false
