@@ -684,18 +684,19 @@ components:
         -
           $ref: '#/components/schemas/BaseResourceCreate'
     BaseArtifactUpdate:
-      type: object
       allOf:
         -
           $ref: '#/components/schemas/BaseResourceUpdate'
-      properties:
-        uri:
-          description: |-
-            The uniform resource identifier of the physical artifact.
-            May be empty if there is no physical artifact.
-          type: string
-        state:
-          $ref: '#/components/schemas/ArtifactState'
+        -
+          type: object
+          properties:
+            uri:
+              description: |-
+                The uniform resource identifier of the physical artifact.
+                May be empty if there is no physical artifact.
+              type: string
+            state:
+              $ref: '#/components/schemas/ArtifactState'
     BaseExecution:
       allOf:
         -
@@ -846,29 +847,30 @@ components:
           $ref: '#/components/schemas/BaseResourceList'
     ModelArtifactUpdate:
       description: 'An ML model artifact. '
-      type: object
       allOf:
         -
           $ref: '#/components/schemas/BaseArtifactUpdate'
-      properties:
-        modelFormatName:
-          description: 'Name of the model format. '
-          type: string
-        runtime:
-          description: 'Model runtime. '
-          type: string
-        storageKey:
-          description: 'Storage secret name. '
-          type: string
-        storagePath:
-          description: Path for model in storage provided by `storageKey`.
-          type: string
-        modelFormatVersion:
-          description: 'Version of the model format. '
-          type: string
-        serviceAccountName:
-          description: 'Name of the service account with storage secret. '
-          type: string
+        -
+          type: object
+          properties:
+            modelFormatName:
+              description: 'Name of the model format. '
+              type: string
+            runtime:
+              description: 'Model runtime. '
+              type: string
+            storageKey:
+              description: 'Storage secret name. '
+              type: string
+            storagePath:
+              description: Path for model in storage provided by `storageKey`.
+              type: string
+            modelFormatVersion:
+              description: 'Version of the model format. '
+              type: string
+            serviceAccountName:
+              description: 'Name of the service account with storage secret. '
+              type: string
     ModelArtifactCreate:
       description: 'An ML model artifact. '
       type: object
@@ -992,7 +994,7 @@ components:
     name:
       examples:
         name:
-          value: artifact-name
+          value: entity-name
       name: name
       description: Name of entity to search.
       schema:
