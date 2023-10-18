@@ -2,10 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"testing"
 
 	"github.com/cucumber/godog"
@@ -59,21 +58,49 @@ func iHaveAConnectionToMR(ctx context.Context) (context.Context, error) {
 	return context.WithValue(ctx, svcLayerCtxKey{}, service), nil
 }
 
-func iStoreAVersionedModelWithPayload(ctx context.Context, arg1 *godog.DocString) error {
+func iStoreARegisteredModelWithNameAndAChildVersionedModelWithNameAndAChildArtifactWithUri(ctx context.Context, registedModelName, modelVersionName, artifactURI string) error {
 	service, ok := ctx.Value(svcLayerCtxKey{}).(core.ModelRegistryApi)
 	if !ok {
-		return errors.New("there are no godogs available")
+		return fmt.Errorf("not found service layer connection in godog context")
 	}
-	var versionedModel openapi.ModelVersion
-	if err := json.Unmarshal([]byte(arg1.Content), &versionedModel); err != nil {
+	var registeredModel *openapi.RegisteredModel
+	var err error
+	registeredModel, err = service.UpsertRegisteredModel(&openapi.RegisteredModel{
+		Name: &registedModelName,
+	})
+	if err != nil {
 		return err
 	}
-	j, _ := json.MarshalIndent(versionedModel, "", "  ")
-	fmt.Println(string(j))
-	if _, err := service.UpsertModelVersion(&versionedModel); err != nil {
+	registeredModelId, err := idToInt64(*registeredModel.Id)
+	if err != nil {
 		return err
 	}
+
+	var versionedModel *openapi.ModelVersion
+	if versionedModel, err = service.UpsertModelVersion(&openapi.ModelVersion{Name: &modelVersionName}, (*core.BaseResourceId)(registeredModelId)); err != nil {
+		return err
+	}
+	versionedModelId, err := idToInt64(*versionedModel.Id)
+	if err != nil {
+		return err
+	}
+
+	if _, err = service.UpsertModelArtifact(&openapi.ModelArtifact{Uri: &artifactURI}, (*core.BaseResourceId)(versionedModelId)); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func idToInt64(idString string) (*int64, error) {
+	idInt, err := strconv.Atoi(idString)
+	if err != nil {
+		return nil, err
+	}
+
+	idInt64 := int64(idInt)
+
+	return &idInt64, nil
 }
 
 func thereShouldBeAMlmdContextOfTypeNamed(ctx context.Context, arg1, arg2 string) error {
@@ -136,11 +163,17 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 	ctx.Step(`^I have a connection to MR$`, iHaveAConnectionToMR)
-	ctx.Step(`^I store a VersionedModel with payload:$`, iStoreAVersionedModelWithPayload)
+	ctx.Step(`^I store a RegisteredModel with name "([^"]*)" and a child VersionedModel with name "([^"]*)" and a child Artifact with uri "([^"]*)"$`, iStoreARegisteredModelWithNameAndAChildVersionedModelWithNameAndAChildArtifactWithUri)
 	ctx.Step(`^there should be a mlmd Context of type "([^"]*)" named "([^"]*)"$`, thereShouldBeAMlmdContextOfTypeNamed)
 	ctx.Step(`^there should be a mlmd Context of type "([^"]*)" having property named "([^"]*)" valorised with string value "([^"]*)"$`, thereShouldBeAMlmdContextOfTypeHavingPropertyNamedValorisedWithStringValue)
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		conn := ctx.Value(connCtxKey{}).(*grpc.ClientConn)
+		client := proto.NewMetadataStoreServiceClient(conn)
+		resp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("%v", resp)
 		conn.Close()
 		mlmdgrpc := ctx.Value(testContainerCtxKey{}).(testcontainers.Container)
 		if err := mlmdgrpc.Terminate(ctx); err != nil {

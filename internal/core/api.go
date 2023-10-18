@@ -2,6 +2,7 @@ package core
 
 import "github.com/opendatahub-io/model-registry/internal/model/openapi"
 
+// Note: for convention, here we are keeping here adherence to the mlmd side
 type BaseResourceId int64
 
 type ListOptions struct {
@@ -37,9 +38,9 @@ type ModelRegistryApi interface {
 
 	// MODEL VERSION
 
-	// Create or update a Model Version associated to a specific RegisteredModel
-	// identified by ModelVersion.RegisteredModelId
-	UpsertModelVersion(modelVersion *openapi.ModelVersion) (*openapi.ModelVersion, error)
+	// Create a new Model Version
+	// or update a Model Version associated to a specific RegisteredModel identified by registeredModelId parameter
+	UpsertModelVersion(modelVersion *openapi.ModelVersion, registeredModelId *BaseResourceId) (*openapi.ModelVersion, error)
 
 	GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error)
 	// TODO: name not clear on OpenAPI, search by registeredModelName and versionName is missing - there is just unclear `name` param.
@@ -50,7 +51,7 @@ type ModelRegistryApi interface {
 
 	// Create or update a Model Artifact associated to a specific ModelVersion
 	// identified by ModelArtifact.ModelVersionId
-	UpsertModelArtifact(modelArtifact *openapi.ModelArtifact) (*openapi.ModelArtifact, error)
+	UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *BaseResourceId) (*openapi.ModelArtifact, error)
 
 	GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error)
 	// TODO: what is this name?

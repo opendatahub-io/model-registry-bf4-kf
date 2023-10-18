@@ -186,26 +186,130 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 
 // MODEL VERSIONS
 
-func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.ModelVersion) (*openapi.ModelVersion, error) {
-	panic("Method not yet implemented")
+func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.ModelVersion, registeredModelId *BaseResourceId) (*openapi.ModelVersion, error) {
+	registeredModel, err := serv.GetRegisteredModelById(registeredModelId)
+	if err != nil {
+		return nil, fmt.Errorf("not a valid registered model id: %d", *registeredModelId)
+	}
+	registeredModelIdCtxID, err := mapper.IdToInt64(*registeredModel.Id)
+	if err != nil {
+		return nil, err
+	}
+	registeredModelName := registeredModel.Name
+	modelCtx, err := serv.mapper.MapFromModelVersion(modelVersion, *registeredModelIdCtxID, registeredModelName)
+	if err != nil {
+		return nil, err
+	}
+
+	modelCtxResp, err := serv.mlmdClient.PutContexts(context.Background(), &proto.PutContextsRequest{
+		Contexts: []*proto.Context{
+			modelCtx,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	modelId := &modelCtxResp.ContextIds[0]
+	serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
+		ParentContexts: []*proto.ParentContext{{
+			ChildId:  modelId,
+			ParentId: registeredModelIdCtxID}},
+		TransactionOptions: &proto.TransactionOptions{},
+	})
+	model, err := serv.GetModelVersionById((*BaseResourceId)(modelId))
+	if err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
 func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error) {
-	panic("Method not yet implemented")
+	getByIdResp, err := serv.mlmdClient.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{int64(*id)},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(getByIdResp.Contexts) != 1 {
+		return nil, fmt.Errorf("multiple model versions found for id %d", *id)
+	}
+
+	modelVer, err := serv.mapper.MapToModelVersion(getByIdResp.Contexts[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return modelVer, nil
 }
 
 // TODO: name not clear on OpenAPI, search by registeredModelName and versionName is missing - there is just unclear `name` param.
 func (serv *modelRegistryService) GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error) {
-	panic("Method not yet implemented")
+	filterQuery := ""
+	if name != nil {
+		filterQuery = fmt.Sprintf("name = \"%s\"", *name)
+	} else if externalId != nil {
+		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
+	}
+
+	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
+		TypeName: &modelVersionType,
+		Options: &proto.ListOperationOptions{
+			FilterQuery: &filterQuery,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(getByParamsResp.Contexts) != 1 {
+		return nil, fmt.Errorf("multiple registered models found for name=%v, externalId=%v", *name, *externalId)
+	}
+
+	modelVer, err := serv.mapper.MapToModelVersion(getByParamsResp.Contexts[0])
+	if err != nil {
+		return nil, err
+	}
+	return modelVer, nil
 }
 
 func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*openapi.ModelVersion, ListResult, error) {
-	panic("Method not yet implemented")
+	listOperationOptions, err := BuildListOperationOptions(listOptions)
+	if err != nil {
+		return nil, ListResult{}, err
+	}
+
+	if registeredModelId != nil {
+		queryParentCtxId := fmt.Sprintf("parent_contexts_a.type = %d", *registeredModelId)
+		listOperationOptions.FilterQuery = &queryParentCtxId
+	}
+
+	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
+		TypeName: &modelVersionType,
+		Options:  listOperationOptions,
+	})
+	if err != nil {
+		return nil, ListResult{}, err
+	}
+
+	results := []*openapi.ModelVersion{}
+	for _, c := range contextsResp.Contexts {
+		mapped, err := serv.mapper.MapToModelVersion(c)
+		if err != nil {
+			return nil, ListResult{}, err
+		}
+		results = append(results, mapped)
+	}
+
+	listResult := NewListResult(contextsResp.Contexts, listOptions, contextsResp.NextPageToken)
+	return results, listResult, nil
 }
 
 // MODEL ARTIFACTS
 
-func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.ModelArtifact) (*openapi.ModelArtifact, error) {
+func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *BaseResourceId) (*openapi.ModelArtifact, error) {
 	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact)
 
 	artifactsResp, err := serv.mlmdClient.PutArtifacts(context.Background(), &proto.PutArtifactsRequest{
@@ -218,20 +322,22 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 	modelArtifact.Id = &idString
 
 	// add explicit association between artifacts and model version
-	attributions := []*proto.Attribution{}
-	for _, a := range artifactsResp.ArtifactIds {
-		attributions = append(attributions, &proto.Attribution{
-			// ContextId:  modelArtifact., // TODO: how to fetch modelVersionId ?
-			ArtifactId: &a,
+	if modelVersionId != nil {
+		modelVersionIdCtx := int64(*modelVersionId)
+		attributions := []*proto.Attribution{}
+		for _, a := range artifactsResp.ArtifactIds {
+			attributions = append(attributions, &proto.Attribution{
+				ContextId:  &modelVersionIdCtx,
+				ArtifactId: &a,
+			})
+		}
+		_, err = serv.mlmdClient.PutAttributionsAndAssociations(context.Background(), &proto.PutAttributionsAndAssociationsRequest{
+			Attributions: attributions,
+			Associations: make([]*proto.Association, 0),
 		})
-	}
-
-	_, err = serv.mlmdClient.PutAttributionsAndAssociations(context.Background(), &proto.PutAttributionsAndAssociationsRequest{
-		Attributions: attributions,
-		Associations: make([]*proto.Association, 0),
-	})
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return modelArtifact, nil

@@ -22,7 +22,7 @@ func NewMapper(registeredModelTypeId int64, modelVersionTypeId int64, modelArtif
 	}
 }
 
-func idToInt(idString string) (*int64, error) {
+func IdToInt64(idString string) (*int64, error) {
 	idInt, err := strconv.Atoi(idString)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (m *Mapper) MapFromRegisteredModel(registeredModel *openapi.RegisteredModel
 	var idInt *int64
 	if registeredModel.Id != nil {
 		var err error
-		idInt, err = idToInt(*registeredModel.Id)
+		idInt, err = IdToInt64(*registeredModel.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -80,22 +80,21 @@ func (m *Mapper) MapFromRegisteredModel(registeredModel *openapi.RegisteredModel
 	}, nil
 }
 
-func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registeredModelId int64) (*proto.Context, error) {
+func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registeredModelId int64, registeredModelName *string) (*proto.Context, error) {
 	fullName := fmt.Sprintf("%d:%s", registeredModelId, *modelVersion.Name)
 	customProps := make(map[string]*proto.Value)
 	if modelVersion.CustomProperties != nil {
 		customProps, _ = m.MapToProperties(*modelVersion.CustomProperties)
 	}
 	ctx := &proto.Context{
-		Name:       &fullName,
-		TypeId:     &m.ModelVersionTypeId,
+		Name:   &fullName,
+		TypeId: &m.ModelVersionTypeId,
 		Properties: map[string]*proto.Value{
-			// TODO: missing information in ModelVersion, need to get it from RegisteredModel
-			// "model_name": {
-			// 	Value: &proto.Value_StringValue{
-			// 		StringValue: *modelVersion.ModelName,
-			// 	},
-			// },
+			"model_name": {
+				Value: &proto.Value_StringValue{
+					StringValue: *registeredModelName,
+				},
+			},
 		},
 		CustomProperties: customProps,
 	}
@@ -172,7 +171,7 @@ func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredMo
 	return model, nil
 }
 
-func (m *Mapper) MapToModelVersion(ctx *proto.Context, artifacts []*proto.Artifact) (*openapi.ModelVersion, error) {
+func (m *Mapper) MapToModelVersion(ctx *proto.Context) (*openapi.ModelVersion, error) {
 	if ctx.GetTypeId() != m.ModelVersionTypeId {
 		return nil, fmt.Errorf("invalid TypeId, exptected %d but received %d", m.ModelVersionTypeId, ctx.GetTypeId())
 	}
