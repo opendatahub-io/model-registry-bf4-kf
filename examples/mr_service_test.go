@@ -25,6 +25,13 @@ func TestUsingContainer(t *testing.T) {
 			t.Error(err)
 		}
 	}()
+
+	defer func() {
+		if err := clearMetadataSqliteDB(wd); err != nil {
+			t.Error(err)
+		}
+	}()
+
 	mappedHost, err := mlmdgrpc.Host(ctx)
 	if err != nil {
 		t.Error(err)
@@ -39,10 +46,6 @@ func TestUsingContainer(t *testing.T) {
 	mlmdHostname = mappedHost
 	mlmdPort = mappedPort.Int()
 	main()
-
-	if err := clearMetadataSqliteDB(wd); err != nil {
-		t.Error(err)
-	}
 }
 
 func clearMetadataSqliteDB(wd string) error {

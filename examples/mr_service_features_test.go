@@ -70,7 +70,7 @@ func iStoreAVersionedModelWithPayload(ctx context.Context, arg1 *godog.DocString
 	}
 	j, _ := json.MarshalIndent(versionedModel, "", "  ")
 	fmt.Println(string(j))
-	if _, err := service.CreateModelVersion(&versionedModel); err != nil {
+	if _, err := service.UpsertModelVersion(&versionedModel); err != nil {
 		return err
 	}
 	return nil

@@ -67,7 +67,8 @@ func main() {
 	}
 
 	// [START]: demo showcasing model registration with multiple versions
-	nameModel := "PricingModel"
+	nameModel1 := "PricingModel"
+	nameModel2 := "ForecastingModel"
 	version1 := "v1"
 	version2 := "v2"
 	author1 := "John"
@@ -77,29 +78,29 @@ func main() {
 	modelFormat1 := "tensorflow"
 	modelFormat2 := "sklearn"
 
-	registerModelVersion(service, nameModel, version1, author1, uri1, modelFormat1)
-	registerModelVersion(service, nameModel, version2, author2, uri2, modelFormat2)
+	registerModelVersion(service, nameModel1, version1, author1, uri1, modelFormat1)
+	registerModelVersion(service, nameModel2, version2, author2, uri2, modelFormat2)
 
-	allRegModels, err := service.GetRegisteredModels()
+	allRegModels, _, err := service.GetRegisteredModels(core.ListOptions{})
 	if err != nil {
 		log.Fatalf("Error getting all registered models: %v", err)
 	}
 	allRegModelJson, _ := json.MarshalIndent(allRegModels, "", "  ")
 	fmt.Printf("Found n. %d registered models: %v\n", len(allRegModels), string(allRegModelJson))
 
-	regModel, err := service.GetRegisteredModel(nameModel)
+	regModel, err := service.GetRegisteredModelById((*core.BaseResourceId)(allRegModels[0].Id))
 	if err != nil {
 		log.Fatalf("Error getting registered model: %v", err)
 	}
 	regModelJson, _ := json.MarshalIndent(regModel, "", "  ")
-	fmt.Printf("Getting registered model with %d versions: %+v, \n", len(*regModel.Versions), string(regModelJson))
+	fmt.Printf("Getting registered model: %+v, \n", string(regModelJson))
 
-	v1, err := service.GetModelVersion(nameModel, version1)
-	if err != nil {
-		log.Fatalf("Error getting model version v1: %v", err)
-	}
-	v1Json, _ := json.MarshalIndent(v1, "", "  ")
-	fmt.Printf("Getting model version: %v\n", string(v1Json))
+	// v1, err := service.GetModelVersion(nameModel, version1)
+	// if err != nil {
+	// 	log.Fatalf("Error getting model version v1: %v", err)
+	// }
+	// v1Json, _ := json.MarshalIndent(v1, "", "  ")
+	// fmt.Printf("Getting model version: %v\n", string(v1Json))
 
 	// [END]: demo showcasing model registration with multiple versions
 
@@ -131,8 +132,12 @@ func registerModelVersion(service core.ModelRegistryApi, name string, version st
 		},
 	}
 
-	_, err := service.CreateModelVersion(modelVersion)
+	registeredModel := &registry.RegisteredModel{
+		Name: &name,
+	}
+
+	_, err := service.UpsertRegisteredModel(registeredModel)
 	if err != nil {
-		log.Fatalf("Error creating model version 1: %v", err)
+		log.Fatalf("Error creating registered model: %v", err)
 	}
 }

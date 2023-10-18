@@ -55,6 +55,7 @@ func (m *Mapper) MapFromRegisteredModel(registeredModel *registry.RegisteredMode
 	return &proto.Context{
 		Name:   registeredModel.Name,
 		TypeId: &m.RegisteredModelTypeId,
+		Id:     registeredModel.Id,
 	}, nil
 }
 
@@ -138,6 +139,7 @@ func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*registry.RegisteredM
 	}
 
 	model := &registry.RegisteredModel{
+		Id:   ctx.Id,
 		Name: ctx.Name,
 	}
 
@@ -154,14 +156,13 @@ func (m *Mapper) MapToModelVersion(ctx *proto.Context, artifacts []*proto.Artifa
 		return nil, err
 	}
 
-	id := fmt.Sprint(*ctx.Id)
 	modelName := ctx.GetProperties()["model_name"].GetStringValue()
 	version := ctx.GetProperties()["version"].GetStringValue()
 	author := ctx.GetProperties()["author"].GetStringValue()
 
 	modelVersion := &registry.VersionedModel{
 		ModelName: &modelName,
-		Id:        &id,
+		Id:        ctx.Id,
 		Version:   &version,
 		Author:    &author,
 		Metadata:  &metadata,

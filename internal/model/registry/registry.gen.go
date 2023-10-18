@@ -9,6 +9,8 @@ import (
 
 // Artifact defines model for Artifact.
 type Artifact struct {
+	Id *int64 	`json:"id,omitempty"`
+	ModelVersionId *int64 	`json:"modelVersionId,omitempty"`
 	Metadata *struct {
 		Authority *string `json:"authority,omitempty"`
 	} `json:"metadata,omitempty"`
@@ -25,6 +27,7 @@ type Environment struct {
 
 // RegisteredModel defines model for RegisteredModel.
 type RegisteredModel struct {
+	Id       *int64 					 `json:"id,omitempty"`
 	Labels   *[]string         `json:"labels,omitempty"`
 	Name     *string           `json:"name,omitempty"`
 	Versions *[]VersionedModel `json:"versions,omitempty"`
@@ -32,11 +35,12 @@ type RegisteredModel struct {
 
 // VersionedModel defines model for VersionedModel.
 type VersionedModel struct {
+	RegisteredModelId *int64 						 `json:"registeredModelId,omitempty"`
 	Artifacts    *[]Artifact             `json:"artifacts,omitempty"`
 	Author       *string                 `json:"author,omitempty"`
 	CreatedDate  *time.Time              `json:"created date,omitempty"`
 	Environments *[]Environment          `json:"environments,omitempty"`
-	Id           *string                 `json:"id,omitempty"`
+	Id           *int64                 `json:"id,omitempty"`
 	Labels       *[]string               `json:"labels,omitempty"`
 	Metadata     *map[string]interface{} `json:"metadata,omitempty"`
 	ModelName    *string                 `json:"model_name,omitempty"`
