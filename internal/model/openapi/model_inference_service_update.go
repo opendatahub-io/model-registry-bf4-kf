@@ -19,12 +19,12 @@ var _ MappedNullable = &InferenceServiceUpdate{}
 
 // InferenceServiceUpdate An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion` from a `RegisteredModel` created by Model Serving.
 type InferenceServiceUpdate struct {
-	// ID of the `ModelVersion` to serve. If it's unspecified, then the latest `ModelVersion` by creation order will be served.
-	ModelVersionId *string `json:"modelVersionId,omitempty"`
 	// User provided custom properties which are not defined by its type.
 	CustomProperties *map[string]MetadataValue `json:"customProperties,omitempty"`
 	// The external id that come from the clients’ system. This field is optional. If set, it must be unique among all resources within a database instance.
 	ExternalID *string `json:"externalID,omitempty"`
+	// ID of the `ModelVersion` to serve. If it's unspecified, then the latest `ModelVersion` by creation order will be served.
+	ModelVersionId *string `json:"modelVersionId,omitempty"`
 }
 
 // NewInferenceServiceUpdate instantiates a new InferenceServiceUpdate object
@@ -42,38 +42,6 @@ func NewInferenceServiceUpdate() *InferenceServiceUpdate {
 func NewInferenceServiceUpdateWithDefaults() *InferenceServiceUpdate {
 	this := InferenceServiceUpdate{}
 	return &this
-}
-
-// GetModelVersionId returns the ModelVersionId field value if set, zero value otherwise.
-func (o *InferenceServiceUpdate) GetModelVersionId() string {
-	if o == nil || IsNil(o.ModelVersionId) {
-		var ret string
-		return ret
-	}
-	return *o.ModelVersionId
-}
-
-// GetModelVersionIdOk returns a tuple with the ModelVersionId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *InferenceServiceUpdate) GetModelVersionIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ModelVersionId) {
-		return nil, false
-	}
-	return o.ModelVersionId, true
-}
-
-// HasModelVersionId returns a boolean if a field has been set.
-func (o *InferenceServiceUpdate) HasModelVersionId() bool {
-	if o != nil && !IsNil(o.ModelVersionId) {
-		return true
-	}
-
-	return false
-}
-
-// SetModelVersionId gets a reference to the given string and assigns it to the ModelVersionId field.
-func (o *InferenceServiceUpdate) SetModelVersionId(v string) {
-	o.ModelVersionId = &v
 }
 
 // GetCustomProperties returns the CustomProperties field value if set, zero value otherwise.
@@ -140,6 +108,38 @@ func (o *InferenceServiceUpdate) SetExternalID(v string) {
 	o.ExternalID = &v
 }
 
+// GetModelVersionId returns the ModelVersionId field value if set, zero value otherwise.
+func (o *InferenceServiceUpdate) GetModelVersionId() string {
+	if o == nil || IsNil(o.ModelVersionId) {
+		var ret string
+		return ret
+	}
+	return *o.ModelVersionId
+}
+
+// GetModelVersionIdOk returns a tuple with the ModelVersionId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *InferenceServiceUpdate) GetModelVersionIdOk() (*string, bool) {
+	if o == nil || IsNil(o.ModelVersionId) {
+		return nil, false
+	}
+	return o.ModelVersionId, true
+}
+
+// HasModelVersionId returns a boolean if a field has been set.
+func (o *InferenceServiceUpdate) HasModelVersionId() bool {
+	if o != nil && !IsNil(o.ModelVersionId) {
+		return true
+	}
+
+	return false
+}
+
+// SetModelVersionId gets a reference to the given string and assigns it to the ModelVersionId field.
+func (o *InferenceServiceUpdate) SetModelVersionId(v string) {
+	o.ModelVersionId = &v
+}
+
 func (o InferenceServiceUpdate) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -150,14 +150,14 @@ func (o InferenceServiceUpdate) MarshalJSON() ([]byte, error) {
 
 func (o InferenceServiceUpdate) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.ModelVersionId) {
-		toSerialize["modelVersionId"] = o.ModelVersionId
-	}
 	if !IsNil(o.CustomProperties) {
 		toSerialize["customProperties"] = o.CustomProperties
 	}
 	if !IsNil(o.ExternalID) {
 		toSerialize["externalID"] = o.ExternalID
+	}
+	if !IsNil(o.ModelVersionId) {
+		toSerialize["modelVersionId"] = o.ModelVersionId
 	}
 	return toSerialize, nil
 }

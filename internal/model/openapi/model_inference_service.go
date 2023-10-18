@@ -31,14 +31,22 @@ type InferenceService struct {
 	CreateTimeSinceEpoch *string `json:"createTimeSinceEpoch,omitempty"`
 	// Output only. Last update time of the resource since epoch in millisecond since epoch.
 	LastUpdateTimeSinceEpoch *string `json:"lastUpdateTimeSinceEpoch,omitempty"`
+	// ID of the `ModelVersion` to serve. If it's unspecified, then the latest `ModelVersion` by creation order will be served.
+	ModelVersionId *string `json:"modelVersionId,omitempty"`
+	// ID of the `RegisteredModel` to serve.
+	RegisteredModelId string `json:"registeredModelId"`
+	// ID of the parent `ServingEnvironment` for this `InferenceService` entity.
+	ServingEnvironmentId string `json:"servingEnvironmentId"`
 }
 
 // NewInferenceService instantiates a new InferenceService object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInferenceService() *InferenceService {
+func NewInferenceService(registeredModelId string, servingEnvironmentId string) *InferenceService {
 	this := InferenceService{}
+	this.RegisteredModelId = registeredModelId
+	this.ServingEnvironmentId = servingEnvironmentId
 	return &this
 }
 
@@ -242,6 +250,86 @@ func (o *InferenceService) SetLastUpdateTimeSinceEpoch(v string) {
 	o.LastUpdateTimeSinceEpoch = &v
 }
 
+// GetModelVersionId returns the ModelVersionId field value if set, zero value otherwise.
+func (o *InferenceService) GetModelVersionId() string {
+	if o == nil || IsNil(o.ModelVersionId) {
+		var ret string
+		return ret
+	}
+	return *o.ModelVersionId
+}
+
+// GetModelVersionIdOk returns a tuple with the ModelVersionId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *InferenceService) GetModelVersionIdOk() (*string, bool) {
+	if o == nil || IsNil(o.ModelVersionId) {
+		return nil, false
+	}
+	return o.ModelVersionId, true
+}
+
+// HasModelVersionId returns a boolean if a field has been set.
+func (o *InferenceService) HasModelVersionId() bool {
+	if o != nil && !IsNil(o.ModelVersionId) {
+		return true
+	}
+
+	return false
+}
+
+// SetModelVersionId gets a reference to the given string and assigns it to the ModelVersionId field.
+func (o *InferenceService) SetModelVersionId(v string) {
+	o.ModelVersionId = &v
+}
+
+// GetRegisteredModelId returns the RegisteredModelId field value
+func (o *InferenceService) GetRegisteredModelId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.RegisteredModelId
+}
+
+// GetRegisteredModelIdOk returns a tuple with the RegisteredModelId field value
+// and a boolean to check if the value has been set.
+func (o *InferenceService) GetRegisteredModelIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.RegisteredModelId, true
+}
+
+// SetRegisteredModelId sets field value
+func (o *InferenceService) SetRegisteredModelId(v string) {
+	o.RegisteredModelId = v
+}
+
+// GetServingEnvironmentId returns the ServingEnvironmentId field value
+func (o *InferenceService) GetServingEnvironmentId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ServingEnvironmentId
+}
+
+// GetServingEnvironmentIdOk returns a tuple with the ServingEnvironmentId field value
+// and a boolean to check if the value has been set.
+func (o *InferenceService) GetServingEnvironmentIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ServingEnvironmentId, true
+}
+
+// SetServingEnvironmentId sets field value
+func (o *InferenceService) SetServingEnvironmentId(v string) {
+	o.ServingEnvironmentId = v
+}
+
 func (o InferenceService) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -270,6 +358,11 @@ func (o InferenceService) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.LastUpdateTimeSinceEpoch) {
 		toSerialize["lastUpdateTimeSinceEpoch"] = o.LastUpdateTimeSinceEpoch
 	}
+	if !IsNil(o.ModelVersionId) {
+		toSerialize["modelVersionId"] = o.ModelVersionId
+	}
+	toSerialize["registeredModelId"] = o.RegisteredModelId
+	toSerialize["servingEnvironmentId"] = o.ServingEnvironmentId
 	return toSerialize, nil
 }
 

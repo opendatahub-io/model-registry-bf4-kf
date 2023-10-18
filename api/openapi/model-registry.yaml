@@ -1428,38 +1428,6 @@ components:
           $ref: '#/components/schemas/BaseResource'
         -
           $ref: '#/components/schemas/InferenceServiceCreate'
-    InferenceServiceCreate:
-      description: >-
-        An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion`
-        from a `RegisteredModel` created by Model Serving.
-      required:
-        - registeredModelId
-        - servingEnvironmentId
-      allOf:
-        -
-          $ref: '#/components/schemas/BaseResourceCreate'
-        -
-          $ref: '#/components/schemas/InferenceServiceUpdate'
-      properties:
-        registeredModelId:
-          description: ID of the `RegisteredModel` to serve.
-          type: string
-        servingEnvironmentId:
-          description: ID of the parent `ServingEnvironment` for this `InferenceService` entity.
-          type: string
-    InferenceServiceUpdate:
-      description: >-
-        An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion`
-        from a `RegisteredModel` created by Model Serving.
-      allOf:
-        -
-          $ref: '#/components/schemas/BaseResourceUpdate'
-      properties:
-        modelVersionId:
-          description: >-
-            ID of the `ModelVersion` to serve. If it's unspecified, then the latest `ModelVersion`
-            by creation order will be served.
-          type: string
     InferenceServiceList:
       description: List of InferenceServices.
       type: object
@@ -1516,6 +1484,42 @@ components:
           properties:
             modelVersionId:
               description: ID of the `ModelVersion` that was served in `InferenceService`.
+              type: string
+    InferenceServiceUpdate:
+      description: >-
+        An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion`
+        from a `RegisteredModel` created by Model Serving.
+      allOf:
+        -
+          $ref: '#/components/schemas/BaseResourceUpdate'
+        -
+          type: object
+          properties:
+            modelVersionId:
+              description: >-
+                ID of the `ModelVersion` to serve. If it's unspecified, then the latest
+                `ModelVersion` by creation order will be served.
+              type: string
+    InferenceServiceCreate:
+      description: >-
+        An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion`
+        from a `RegisteredModel` created by Model Serving.
+      allOf:
+        -
+          $ref: '#/components/schemas/BaseResourceCreate'
+        -
+          $ref: '#/components/schemas/InferenceServiceUpdate'
+        -
+          required:
+            - registeredModelId
+            - servingEnvironmentId
+          type: object
+          properties:
+            registeredModelId:
+              description: ID of the `RegisteredModel` to serve.
+              type: string
+            servingEnvironmentId:
+              description: ID of the parent `ServingEnvironment` for this `InferenceService` entity.
               type: string
   responses:
     NotFound:

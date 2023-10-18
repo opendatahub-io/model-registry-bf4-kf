@@ -19,16 +19,18 @@ var _ MappedNullable = &InferenceServiceCreate{}
 
 // InferenceServiceCreate An `InferenceService` entity in a `ServingEnvironment` represents a deployed `ModelVersion` from a `RegisteredModel` created by Model Serving.
 type InferenceServiceCreate struct {
-	// ID of the `RegisteredModel` to serve.
-	RegisteredModelId string `json:"registeredModelId"`
-	// ID of the parent `ServingEnvironment` for this `InferenceService` entity.
-	ServingEnvironmentId string `json:"servingEnvironmentId"`
 	// User provided custom properties which are not defined by its type.
 	CustomProperties *map[string]MetadataValue `json:"customProperties,omitempty"`
 	// The external id that come from the clients’ system. This field is optional. If set, it must be unique among all resources within a database instance.
 	ExternalID *string `json:"externalID,omitempty"`
 	// The client provided name of the artifact. This field is optional. If set, it must be unique among all the artifacts of the same artifact type within a database instance and cannot be changed once set.
 	Name *string `json:"name,omitempty"`
+	// ID of the `ModelVersion` to serve. If it's unspecified, then the latest `ModelVersion` by creation order will be served.
+	ModelVersionId *string `json:"modelVersionId,omitempty"`
+	// ID of the `RegisteredModel` to serve.
+	RegisteredModelId string `json:"registeredModelId"`
+	// ID of the parent `ServingEnvironment` for this `InferenceService` entity.
+	ServingEnvironmentId string `json:"servingEnvironmentId"`
 }
 
 // NewInferenceServiceCreate instantiates a new InferenceServiceCreate object
@@ -37,6 +39,8 @@ type InferenceServiceCreate struct {
 // will change when the set of required properties is changed
 func NewInferenceServiceCreate(registeredModelId string, servingEnvironmentId string) *InferenceServiceCreate {
 	this := InferenceServiceCreate{}
+	this.RegisteredModelId = registeredModelId
+	this.ServingEnvironmentId = servingEnvironmentId
 	return &this
 }
 
@@ -46,54 +50,6 @@ func NewInferenceServiceCreate(registeredModelId string, servingEnvironmentId st
 func NewInferenceServiceCreateWithDefaults() *InferenceServiceCreate {
 	this := InferenceServiceCreate{}
 	return &this
-}
-
-// GetRegisteredModelId returns the RegisteredModelId field value
-func (o *InferenceServiceCreate) GetRegisteredModelId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.RegisteredModelId
-}
-
-// GetRegisteredModelIdOk returns a tuple with the RegisteredModelId field value
-// and a boolean to check if the value has been set.
-func (o *InferenceServiceCreate) GetRegisteredModelIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.RegisteredModelId, true
-}
-
-// SetRegisteredModelId sets field value
-func (o *InferenceServiceCreate) SetRegisteredModelId(v string) {
-	o.RegisteredModelId = v
-}
-
-// GetServingEnvironmentId returns the ServingEnvironmentId field value
-func (o *InferenceServiceCreate) GetServingEnvironmentId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ServingEnvironmentId
-}
-
-// GetServingEnvironmentIdOk returns a tuple with the ServingEnvironmentId field value
-// and a boolean to check if the value has been set.
-func (o *InferenceServiceCreate) GetServingEnvironmentIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ServingEnvironmentId, true
-}
-
-// SetServingEnvironmentId sets field value
-func (o *InferenceServiceCreate) SetServingEnvironmentId(v string) {
-	o.ServingEnvironmentId = v
 }
 
 // GetCustomProperties returns the CustomProperties field value if set, zero value otherwise.
@@ -192,6 +148,86 @@ func (o *InferenceServiceCreate) SetName(v string) {
 	o.Name = &v
 }
 
+// GetModelVersionId returns the ModelVersionId field value if set, zero value otherwise.
+func (o *InferenceServiceCreate) GetModelVersionId() string {
+	if o == nil || IsNil(o.ModelVersionId) {
+		var ret string
+		return ret
+	}
+	return *o.ModelVersionId
+}
+
+// GetModelVersionIdOk returns a tuple with the ModelVersionId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *InferenceServiceCreate) GetModelVersionIdOk() (*string, bool) {
+	if o == nil || IsNil(o.ModelVersionId) {
+		return nil, false
+	}
+	return o.ModelVersionId, true
+}
+
+// HasModelVersionId returns a boolean if a field has been set.
+func (o *InferenceServiceCreate) HasModelVersionId() bool {
+	if o != nil && !IsNil(o.ModelVersionId) {
+		return true
+	}
+
+	return false
+}
+
+// SetModelVersionId gets a reference to the given string and assigns it to the ModelVersionId field.
+func (o *InferenceServiceCreate) SetModelVersionId(v string) {
+	o.ModelVersionId = &v
+}
+
+// GetRegisteredModelId returns the RegisteredModelId field value
+func (o *InferenceServiceCreate) GetRegisteredModelId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.RegisteredModelId
+}
+
+// GetRegisteredModelIdOk returns a tuple with the RegisteredModelId field value
+// and a boolean to check if the value has been set.
+func (o *InferenceServiceCreate) GetRegisteredModelIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.RegisteredModelId, true
+}
+
+// SetRegisteredModelId sets field value
+func (o *InferenceServiceCreate) SetRegisteredModelId(v string) {
+	o.RegisteredModelId = v
+}
+
+// GetServingEnvironmentId returns the ServingEnvironmentId field value
+func (o *InferenceServiceCreate) GetServingEnvironmentId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ServingEnvironmentId
+}
+
+// GetServingEnvironmentIdOk returns a tuple with the ServingEnvironmentId field value
+// and a boolean to check if the value has been set.
+func (o *InferenceServiceCreate) GetServingEnvironmentIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ServingEnvironmentId, true
+}
+
+// SetServingEnvironmentId sets field value
+func (o *InferenceServiceCreate) SetServingEnvironmentId(v string) {
+	o.ServingEnvironmentId = v
+}
+
 func (o InferenceServiceCreate) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -202,8 +238,6 @@ func (o InferenceServiceCreate) MarshalJSON() ([]byte, error) {
 
 func (o InferenceServiceCreate) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["registeredModelId"] = o.RegisteredModelId
-	toSerialize["servingEnvironmentId"] = o.ServingEnvironmentId
 	if !IsNil(o.CustomProperties) {
 		toSerialize["customProperties"] = o.CustomProperties
 	}
@@ -213,6 +247,11 @@ func (o InferenceServiceCreate) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
+	if !IsNil(o.ModelVersionId) {
+		toSerialize["modelVersionId"] = o.ModelVersionId
+	}
+	toSerialize["registeredModelId"] = o.RegisteredModelId
+	toSerialize["servingEnvironmentId"] = o.ServingEnvironmentId
 	return toSerialize, nil
 }
 
