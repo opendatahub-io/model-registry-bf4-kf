@@ -39,7 +39,6 @@ func TestCreateRegisteredModel(t *testing.T) {
 	owner := "Myself"
 
 	// register a new model
-	// TODO: add some custom props
 	registeredModel := &openapi.RegisteredModel{
 		Name:       &modelName,
 		ExternalID: &externalId,
@@ -90,7 +89,6 @@ func TestGetRegisteredModelById(t *testing.T) {
 	externalId := "mysupermodel"
 
 	// register a new model
-	// TODO: add some custom props
 	registeredModel := &openapi.RegisteredModel{
 		Name:       &modelName,
 		ExternalID: &externalId,

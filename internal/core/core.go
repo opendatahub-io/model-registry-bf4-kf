@@ -245,7 +245,6 @@ func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*open
 	return modelVer, nil
 }
 
-// TODO: name not clear on OpenAPI, search by registeredModelName and versionName is missing - there is just unclear `name` param.
 func (serv *modelRegistryService) GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error) {
 	filterQuery := ""
 	if name != nil {
@@ -365,7 +364,7 @@ func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externa
 	filterQuery := ""
 	if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
-	} else if name != nil { // TODO: see comment about `name` field in OpenAPI
+	} else if name != nil {
 		filterQuery = fmt.Sprintf("name = \"%s\"", *name)
 	} else {
 		return nil, fmt.Errorf("invalid parameters call, supply either name or externalId")

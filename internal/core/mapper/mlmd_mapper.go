@@ -42,7 +42,6 @@ func IdToString(idInt int64) *string {
 
 // Internal Model --> MLMD
 
-// TODO: implement
 // Map generic map into MLMD [custom] properties object
 func (m *Mapper) MapToProperties(data map[string]openapi.MetadataValue) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
@@ -141,8 +140,9 @@ func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registe
 func (m *Mapper) MapFromModelArtifact(modelArtifact openapi.ModelArtifact) *proto.Artifact {
 	return &proto.Artifact{
 		TypeId: &m.ModelArtifactTypeId,
-		Name:   modelArtifact.Name,
-		Uri:    modelArtifact.Uri,
+		// TODO: we should use concatenation between uuid + name
+		Name: modelArtifact.Name,
+		Uri:  modelArtifact.Uri,
 	}
 }
 
@@ -159,7 +159,6 @@ func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]openapi.ModelArtifact) 
 
 //  MLMD --> Internal Model
 
-// TODO implement
 // Maps MLMD properties into a generic <string, any> map
 func (m *Mapper) MapFromProperties(props map[string]*proto.Value) (map[string]openapi.MetadataValue, error) {
 	data := make(map[string]openapi.MetadataValue)

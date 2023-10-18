@@ -43,7 +43,6 @@ type ModelRegistryApi interface {
 	UpsertModelVersion(modelVersion *openapi.ModelVersion, registeredModelId *BaseResourceId) (*openapi.ModelVersion, error)
 
 	GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error)
-	// TODO: name not clear on OpenAPI, search by registeredModelName and versionName is missing - there is just unclear `name` param.
 	GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error)
 	GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*openapi.ModelVersion, ListResult, error)
 
@@ -54,7 +53,6 @@ type ModelRegistryApi interface {
 	UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *BaseResourceId) (*openapi.ModelArtifact, error)
 
 	GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error)
-	// TODO: what is this name?
 	GetModelArtifactByParams(name *string, externalId *string) (*openapi.ModelArtifact, error)
 	GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) ([]*openapi.ModelArtifact, ListResult, error)
 }
