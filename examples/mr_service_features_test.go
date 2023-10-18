@@ -11,7 +11,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/opendatahub-io/model-registry/internal/core"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
-	"github.com/opendatahub-io/model-registry/internal/model/registry"
+	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/testcontainers/testcontainers-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -64,7 +64,7 @@ func iStoreAVersionedModelWithPayload(ctx context.Context, arg1 *godog.DocString
 	if !ok {
 		return errors.New("there are no godogs available")
 	}
-	var versionedModel registry.VersionedModel
+	var versionedModel openapi.ModelVersion
 	if err := json.Unmarshal([]byte(arg1.Content), &versionedModel); err != nil {
 		return err
 	}

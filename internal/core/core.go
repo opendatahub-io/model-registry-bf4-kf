@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
-	"github.com/opendatahub-io/model-registry/internal/model/registry"
+	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"google.golang.org/grpc"
 )
 
@@ -78,7 +79,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 // REGISTERED MODELS
 
-func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *registry.RegisteredModel) (*registry.RegisteredModel, error) {
+func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *openapi.RegisteredModel) (*openapi.RegisteredModel, error) {
 	log.Printf("Creating or updating registered model for %s", *registeredModel.Name)
 
 	modelCtx, err := serv.mapper.MapFromRegisteredModel(registeredModel)
@@ -104,7 +105,7 @@ func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *registr
 	return model, nil
 }
 
-func (serv *modelRegistryService) GetRegisteredModelById(id *BaseResourceId) (*registry.RegisteredModel, error) {
+func (serv *modelRegistryService) GetRegisteredModelById(id *BaseResourceId) (*openapi.RegisteredModel, error) {
 	log.Printf("Getting registered model %d", *id)
 
 	getByIdResp, err := serv.mlmdClient.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
@@ -126,7 +127,7 @@ func (serv *modelRegistryService) GetRegisteredModelById(id *BaseResourceId) (*r
 	return regModel, nil
 }
 
-func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, externalId *string) (*registry.RegisteredModel, error) {
+func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, externalId *string) (*openapi.RegisteredModel, error) {
 	log.Printf("Getting registered model by params name=%v, externalId=%v", name, externalId)
 
 	filterQuery := ""
@@ -157,7 +158,7 @@ func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, exter
 	return regModel, nil
 }
 
-func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) ([]*registry.RegisteredModel, ListResult, error) {
+func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) ([]*openapi.RegisteredModel, ListResult, error) {
 	listOperationOptions, err := BuildListOperationOptions(listOptions)
 	if err != nil {
 		return nil, ListResult{}, err
@@ -170,7 +171,7 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 		return nil, ListResult{}, err
 	}
 
-	results := []*registry.RegisteredModel{}
+	results := []*openapi.RegisteredModel{}
 	for _, c := range contextsResp.Contexts {
 		mapped, err := serv.mapper.MapToRegisteredModel(c)
 		if err != nil {
@@ -185,26 +186,26 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 
 // MODEL VERSIONS
 
-func (serv *modelRegistryService) UpsertModelVersion(modelVersion *registry.VersionedModel) (*registry.VersionedModel, error) {
+func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.ModelVersion) (*openapi.ModelVersion, error) {
 	panic("Method not yet implemented")
 }
 
-func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*registry.VersionedModel, error) {
+func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error) {
 	panic("Method not yet implemented")
 }
 
 // TODO: name not clear on OpenAPI, search by registeredModelName and versionName is missing - there is just unclear `name` param.
-func (serv *modelRegistryService) GetModelVersionByParams(name *string, externalId *string) (*registry.VersionedModel, error) {
+func (serv *modelRegistryService) GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error) {
 	panic("Method not yet implemented")
 }
 
-func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*registry.VersionedModel, ListResult, error) {
+func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*openapi.ModelVersion, ListResult, error) {
 	panic("Method not yet implemented")
 }
 
 // MODEL ARTIFACTS
 
-func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *registry.Artifact) (*registry.Artifact, error) {
+func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.ModelArtifact) (*openapi.ModelArtifact, error) {
 	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact)
 
 	artifactsResp, err := serv.mlmdClient.PutArtifacts(context.Background(), &proto.PutArtifactsRequest{
@@ -213,13 +214,14 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *registry.Ar
 	if err != nil {
 		return nil, err
 	}
-	modelArtifact.Id = &artifactsResp.ArtifactIds[0]
+	idString := strconv.FormatInt(artifactsResp.ArtifactIds[0], 10)
+	modelArtifact.Id = &idString
 
 	// add explicit association between artifacts and model version
 	attributions := []*proto.Attribution{}
 	for _, a := range artifactsResp.ArtifactIds {
 		attributions = append(attributions, &proto.Attribution{
-			ContextId:  modelArtifact.ModelVersionId,
+			// ContextId:  modelArtifact., // TODO: how to fetch modelVersionId ?
 			ArtifactId: &a,
 		})
 	}
@@ -235,7 +237,7 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *registry.Ar
 	return modelArtifact, nil
 }
 
-func (serv *modelRegistryService) GetModelArtifactById(id *BaseResourceId) (*registry.Artifact, error) {
+func (serv *modelRegistryService) GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error) {
 	artifactsResp, err := serv.mlmdClient.GetArtifactsByID(context.Background(), &proto.GetArtifactsByIDRequest{
 		ArtifactIds: []int64{int64(*id)},
 	})
@@ -251,7 +253,7 @@ func (serv *modelRegistryService) GetModelArtifactById(id *BaseResourceId) (*reg
 	return result, nil
 }
 
-func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externalId *string) (*registry.Artifact, error) {
+func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externalId *string) (*openapi.ModelArtifact, error) {
 	var artifact0 *proto.Artifact
 
 	filterQuery := ""
@@ -285,7 +287,7 @@ func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externa
 	return result, nil
 }
 
-func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) ([]*registry.Artifact, ListResult, error) {
+func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) ([]*openapi.ModelArtifact, ListResult, error) {
 	listOperationOptions, err := BuildListOperationOptions(listOptions)
 	if err != nil {
 		return nil, ListResult{}, err
@@ -316,7 +318,7 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, mod
 		nextPageToken = artifactsResp.NextPageToken
 	}
 
-	results := []*registry.Artifact{}
+	results := []*openapi.ModelArtifact{}
 	for _, a := range artifacts {
 		mapped, err := serv.mapper.MapToModelArtifact(a)
 		if err != nil {

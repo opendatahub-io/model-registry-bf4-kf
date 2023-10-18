@@ -2,10 +2,10 @@ package mapper
 
 import (
 	"fmt"
-	"log"
+	"strconv"
 
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
-	"github.com/opendatahub-io/model-registry/internal/model/registry"
+	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
 
 type Mapper struct {
@@ -22,80 +22,103 @@ func NewMapper(registeredModelTypeId int64, modelVersionTypeId int64, modelArtif
 	}
 }
 
+func idToInt(idString string) (*int64, error) {
+	idInt, err := strconv.Atoi(idString)
+	if err != nil {
+		return nil, err
+	}
+
+	idInt64 := int64(idInt)
+
+	return &idInt64, nil
+}
+
 // Internal Model --> MLMD
 
 // TODO: implement
 // Map generic map into MLMD [custom] properties object
-func (m *Mapper) MapToProperties(data map[string]any) (map[string]*proto.Value, error) {
+func (m *Mapper) MapToProperties(data map[string]openapi.MetadataValue) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 
-	for key, v := range data {
-		value := proto.Value{}
+	// TODO: fix proper mapping
+	// for key, v := range data {
+	// 	value := proto.Value{}
 
-		switch typedValue := v.(type) {
-		case int:
-			value.Value = &proto.Value_IntValue{IntValue: int64(typedValue)}
-		case string:
-			value.Value = &proto.Value_StringValue{StringValue: typedValue}
-		case float64:
-			value.Value = &proto.Value_DoubleValue{DoubleValue: float64(typedValue)}
-		default:
-			log.Printf("Type mapping not found for %s:%v", key, v)
-			continue
-		}
+	// 	switch typedValue := v.(type) {
+	// 	case int:
+	// 		value.Value = &proto.Value_IntValue{IntValue: int64(typedValue)}
+	// 	case string:
+	// 		value.Value = &proto.Value_StringValue{StringValue: typedValue}
+	// 	case float64:
+	// 		value.Value = &proto.Value_DoubleValue{DoubleValue: float64(typedValue)}
+	// 	default:
+	// 		log.Printf("Type mapping not found for %s:%v", key, v)
+	// 		continue
+	// 	}
 
-		props[key] = &value
-	}
+	// 	props[key] = &value
+	// }
 
 	return props, nil
 }
 
-func (m *Mapper) MapFromRegisteredModel(registeredModel *registry.RegisteredModel) (*proto.Context, error) {
+func (m *Mapper) MapFromRegisteredModel(registeredModel *openapi.RegisteredModel) (*proto.Context, error) {
+
+	var idInt *int64
+	if registeredModel.Id != nil {
+		var err error
+		idInt, err = idToInt(*registeredModel.Id)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &proto.Context{
 		Name:   registeredModel.Name,
 		TypeId: &m.RegisteredModelTypeId,
-		Id:     registeredModel.Id,
+		Id:     idInt,
 	}, nil
 }
 
-func (m *Mapper) MapFromModelVersion(modelVersion *registry.VersionedModel, registeredModelId int64) (*proto.Context, error) {
-	fullName := fmt.Sprintf("%d:%s", registeredModelId, *modelVersion.Version)
+func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registeredModelId int64) (*proto.Context, error) {
+	fullName := fmt.Sprintf("%d:%s", registeredModelId, *modelVersion.Name)
 	customProps := make(map[string]*proto.Value)
-	if modelVersion.Metadata != nil {
-		customProps, _ = m.MapToProperties(*modelVersion.Metadata)
+	if modelVersion.CustomProperties != nil {
+		customProps, _ = m.MapToProperties(*modelVersion.CustomProperties)
 	}
 	ctx := &proto.Context{
-		Name:   &fullName,
-		TypeId: &m.ModelVersionTypeId,
+		Name:       &fullName,
+		TypeId:     &m.ModelVersionTypeId,
 		Properties: map[string]*proto.Value{
-			"model_name": {
-				Value: &proto.Value_StringValue{
-					StringValue: *modelVersion.ModelName,
-				},
-			},
+			// TODO: missing information in ModelVersion, need to get it from RegisteredModel
+			// "model_name": {
+			// 	Value: &proto.Value_StringValue{
+			// 		StringValue: *modelVersion.ModelName,
+			// 	},
+			// },
 		},
 		CustomProperties: customProps,
 	}
-	if modelVersion.Version != nil {
+	if modelVersion.Name != nil {
 		ctx.Properties["version"] = &proto.Value{
 			Value: &proto.Value_StringValue{
-				StringValue: *modelVersion.Version,
+				StringValue: *modelVersion.Name,
 			},
 		}
 	}
-	if modelVersion.Author != nil {
-		ctx.Properties["author"] = &proto.Value{
-			Value: &proto.Value_StringValue{
-				StringValue: *modelVersion.Author,
-			},
-		}
-	}
+	// TODO: missing explicit property in openapi
+	// if modelVersion.Author != nil {
+	// 	ctx.Properties["author"] = &proto.Value{
+	// 		Value: &proto.Value_StringValue{
+	// 			StringValue: *modelVersion.Author,
+	// 		},
+	// 	}
+	// }
 
 	return ctx, nil
 }
 
-func (m *Mapper) MapFromModelArtifact(modelArtifact registry.Artifact) *proto.Artifact {
+func (m *Mapper) MapFromModelArtifact(modelArtifact openapi.ModelArtifact) *proto.Artifact {
 	return &proto.Artifact{
 		TypeId: &m.ModelArtifactTypeId,
 		Name:   modelArtifact.Name,
@@ -103,7 +126,7 @@ func (m *Mapper) MapFromModelArtifact(modelArtifact registry.Artifact) *proto.Ar
 	}
 }
 
-func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]registry.Artifact) ([]*proto.Artifact, error) {
+func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]openapi.ModelArtifact) ([]*proto.Artifact, error) {
 	artifacts := []*proto.Artifact{}
 	if modelArtifacts == nil {
 		return artifacts, nil
@@ -118,17 +141,18 @@ func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]registry.Artifact) ([]*
 
 // TODO implement
 // Maps MLMD properties into a generic <string, any> map
-func (m *Mapper) MapFromProperties(props map[string]*proto.Value) (map[string]any, error) {
-	data := make(map[string]any)
+func (m *Mapper) MapFromProperties(props map[string]*proto.Value) (map[string]openapi.MetadataValue, error) {
+	data := make(map[string]openapi.MetadataValue)
 
-	for key, v := range props {
-		data[key] = v.Value
-	}
+	// TODO: fix proper mapping
+	// for key, v := range props {
+	// 	data[key] = v.Value
+	// }
 
 	return data, nil
 }
 
-func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*registry.RegisteredModel, error) {
+func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredModel, error) {
 	if ctx.GetTypeId() != m.RegisteredModelTypeId {
 		return nil, fmt.Errorf("invalid TypeId, exptected %d but received %d", m.RegisteredModelTypeId, ctx.GetTypeId())
 	}
@@ -138,15 +162,17 @@ func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*registry.RegisteredM
 		return nil, err
 	}
 
-	model := &registry.RegisteredModel{
-		Id:   ctx.Id,
+	idString := strconv.FormatInt(*ctx.Id, 10)
+
+	model := &openapi.RegisteredModel{
+		Id:   &idString,
 		Name: ctx.Name,
 	}
 
 	return model, nil
 }
 
-func (m *Mapper) MapToModelVersion(ctx *proto.Context, artifacts []*proto.Artifact) (*registry.VersionedModel, error) {
+func (m *Mapper) MapToModelVersion(ctx *proto.Context, artifacts []*proto.Artifact) (*openapi.ModelVersion, error) {
 	if ctx.GetTypeId() != m.ModelVersionTypeId {
 		return nil, fmt.Errorf("invalid TypeId, exptected %d but received %d", m.ModelVersionTypeId, ctx.GetTypeId())
 	}
@@ -156,36 +182,24 @@ func (m *Mapper) MapToModelVersion(ctx *proto.Context, artifacts []*proto.Artifa
 		return nil, err
 	}
 
-	modelName := ctx.GetProperties()["model_name"].GetStringValue()
-	version := ctx.GetProperties()["version"].GetStringValue()
-	author := ctx.GetProperties()["author"].GetStringValue()
+	// modelName := ctx.GetProperties()["model_name"].GetStringValue()
+	// version := ctx.GetProperties()["version"].GetStringValue()
+	// author := ctx.GetProperties()["author"].GetStringValue()
 
-	modelVersion := &registry.VersionedModel{
-		ModelName: &modelName,
-		Id:        ctx.Id,
-		Version:   &version,
-		Author:    &author,
-		Metadata:  &metadata,
+	idString := strconv.FormatInt(*ctx.Id, 10)
+
+	modelVersion := &openapi.ModelVersion{
+		// ModelName: &modelName,
+		Id:   &idString,
+		Name: ctx.Name,
+		// Author:   &author,
+		CustomProperties: &metadata,
 	}
-
-	modelArtifacts := []registry.Artifact{}
-	if artifacts != nil {
-		for _, a := range artifacts {
-			art, err := m.MapToModelArtifact(a)
-			if err != nil {
-				return nil, err
-			}
-			modelArtifacts = append(modelArtifacts, *art)
-		}
-		modelVersion.ModelUri = *modelArtifacts[0].Uri
-	}
-
-	modelVersion.Artifacts = &modelArtifacts
 
 	return modelVersion, nil
 }
 
-func (m *Mapper) MapToModelArtifact(artifact *proto.Artifact) (*registry.Artifact, error) {
+func (m *Mapper) MapToModelArtifact(artifact *proto.Artifact) (*openapi.ModelArtifact, error) {
 	if artifact.GetTypeId() != m.ModelArtifactTypeId {
 		return nil, fmt.Errorf("invalid TypeId, exptected %d but received %d", m.ModelArtifactTypeId, artifact.GetTypeId())
 	}
@@ -200,7 +214,7 @@ func (m *Mapper) MapToModelArtifact(artifact *proto.Artifact) (*registry.Artifac
 		return nil, err
 	}
 
-	modelArtifact := &registry.Artifact{
+	modelArtifact := &openapi.ModelArtifact{
 		Uri:  artifact.Uri,
 		Name: artifact.Name,
 	}

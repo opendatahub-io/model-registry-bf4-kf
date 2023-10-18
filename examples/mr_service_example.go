@@ -5,14 +5,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/opendatahub-io/model-registry/internal/core"
-	"github.com/opendatahub-io/model-registry/internal/model/registry"
+	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+func idToInt(idString string) (*int64, error) {
+	idInt, err := strconv.Atoi(idString)
+	if err != nil {
+		return nil, err
+	}
+
+	idInt64 := int64(idInt)
+
+	return &idInt64, nil
+}
 
 func InterceptorLogger(l *log.Logger) logging.Logger {
 	return logging.LoggerFunc(func(_ context.Context, lvl logging.Level, msg string, fields ...any) {
@@ -88,7 +100,8 @@ func main() {
 	allRegModelJson, _ := json.MarshalIndent(allRegModels, "", "  ")
 	fmt.Printf("Found n. %d registered models: %v\n", len(allRegModels), string(allRegModelJson))
 
-	regModel, err := service.GetRegisteredModelById((*core.BaseResourceId)(allRegModels[0].Id))
+	id, _ := idToInt(*allRegModels[0].Id)
+	regModel, err := service.GetRegisteredModelById((*core.BaseResourceId)(id))
 	if err != nil {
 		log.Fatalf("Error getting registered model: %v", err)
 	}
@@ -108,31 +121,31 @@ func main() {
 }
 
 func registerModelVersion(service core.ModelRegistryApi, name string, version string, author string, uri string, format string) {
-	modelVersion := &registry.VersionedModel{}
+	// modelVersion := &openapi.ModelVersion{}
 
-	modelArtifactName := fmt.Sprintf("%s/%s", name, format)
-	modelArtifact := registry.Artifact{
-		Name: &modelArtifactName,
-		Uri:  &uri,
-	}
+	// modelArtifactName := fmt.Sprintf("%s/%s", name, format)
+	// modelArtifact := openapi.ModelArtifact{
+	// 	Name: &modelArtifactName,
+	// 	Uri:  &uri,
+	// }
 
-	artifacts := &[]registry.Artifact{
-		modelArtifact,
-	}
+	// artifacts := &[]openapi.ModelArtifact{
+	// 	modelArtifact,
+	// }
 
-	modelVersion.ModelName = &name
-	modelVersion.ModelUri = uri
-	modelVersion.Version = &version
-	modelVersion.Artifacts = artifacts
-	modelVersion.Author = &author
-	modelVersion.Metadata = &map[string]interface{}{
-		"accuracy": 0.89,
-		"not_supported_key": map[string]interface{}{
-			"custom_key": "custom_value",
-		},
-	}
+	// modelVersion.ModelName = &name
+	// modelVersion.ModelUri = uri
+	// modelVersion.Version = &version
+	// modelVersion.Artifacts = artifacts
+	// modelVersion.Author = &author
+	// modelVersion.Metadata = &map[string]interface{}{
+	// 	"accuracy": 0.89,
+	// 	"not_supported_key": map[string]interface{}{
+	// 		"custom_key": "custom_value",
+	// 	},
+	// }
 
-	registeredModel := &registry.RegisteredModel{
+	registeredModel := &openapi.RegisteredModel{
 		Name: &name,
 	}
 
