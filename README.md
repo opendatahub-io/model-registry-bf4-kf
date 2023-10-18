@@ -95,3 +95,13 @@ And `<hostname>` and `<port>` are the local ip and port to use to expose the con
 The server listens on `localhost` by default, hence the `-n 0.0.0.0` option allows the server port to be exposed. 
 
 Once the server has started, test clients and playground can be used as described in the above sections. 
+
+## Domain Sepcific Model
+
+The internal domain specific model is auto-generated from the OpenAPI specification, running the following command:
+
+```bash
+make gen/oapi_models
+```
+
+> **Note**: this step is automated in the Makefile `gen` step.
