@@ -211,12 +211,16 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 	}
 
 	modelId := &modelCtxResp.ContextIds[0]
-	serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
+	_, err = serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
 		ParentContexts: []*proto.ParentContext{{
 			ChildId:  modelId,
 			ParentId: registeredModelIdCtxID}},
 		TransactionOptions: &proto.TransactionOptions{},
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	model, err := serv.GetModelVersionById((*BaseResourceId)(modelId))
 	if err != nil {
 		return nil, err
