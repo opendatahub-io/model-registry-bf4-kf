@@ -1,9 +1,10 @@
-package main
+package bdd_test
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"testing"
 
@@ -12,8 +13,16 @@ import (
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+)
+
+const useProvider = testcontainers.ProviderDefault // or explicit to testcontainers.ProviderPodman if needed
+
+var (
+	mlmdHostname string
+	mlmdPort     int
 )
 
 func TestFeatures(t *testing.T) {
@@ -168,12 +177,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^there should be a mlmd Context of type "([^"]*)" having property named "([^"]*)" valorised with string value "([^"]*)"$`, thereShouldBeAMlmdContextOfTypeHavingPropertyNamedValorisedWithStringValue)
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 		conn := ctx.Value(connCtxKey{}).(*grpc.ClientConn)
-		client := proto.NewMetadataStoreServiceClient(conn)
-		resp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
-		if err != nil {
-			return nil, err
-		}
-		fmt.Printf("%v", resp)
 		conn.Close()
 		mlmdgrpc := ctx.Value(testContainerCtxKey{}).(testcontainers.Container)
 		if err := mlmdgrpc.Terminate(ctx); err != nil {
@@ -183,4 +186,43 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		clearMetadataSqliteDB(wd)
 		return ctx, nil
 	})
+}
+
+func clearMetadataSqliteDB(wd string) error {
+	if err := os.Remove(fmt.Sprintf("%s/%s", wd, "metadata.sqlite.db")); err != nil {
+		return fmt.Errorf("Expected to clear sqlite file but didn't find: %v", err)
+	}
+	return nil
+}
+
+func setupTestContainer(ctx context.Context) (string, testcontainers.Container, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", nil, err
+	}
+	req := testcontainers.ContainerRequest{
+		Image:        "gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0",
+		ExposedPorts: []string{"8080/tcp"},
+		Env: map[string]string{
+			"METADATA_STORE_SERVER_CONFIG_FILE": "/tmp/shared/conn_config.pb",
+		},
+		Mounts: testcontainers.ContainerMounts{
+			testcontainers.ContainerMount{
+				Source: testcontainers.GenericBindMountSource{
+					HostPath: wd,
+				},
+				Target: "/tmp/shared",
+			},
+		},
+		WaitingFor: wait.ForLog("Server listening on"),
+	}
+	mlmdgrpc, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ProviderType:     useProvider,
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		return "", nil, err
+	}
+	return wd, mlmdgrpc, nil
 }

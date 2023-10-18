@@ -119,6 +119,11 @@ lint: gen
 test: gen
 	go test ./internal/...
 
+.PHONY: clean-test
+clean-test: gen
+	go clean -testcache
+	go test ./internal/...
+
 .PHONY: run/migrate
 run/migrate: gen
 	go run main.go migrate --logtostderr=true -m config/metadata-library
