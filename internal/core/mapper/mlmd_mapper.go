@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
@@ -33,6 +34,12 @@ func IdToInt64(idString string) (*int64, error) {
 	return &idInt64, nil
 }
 
+func IdToString(idInt int64) *string {
+	idString := strconv.FormatInt(idInt, 10)
+
+	return &idString
+}
+
 // Internal Model --> MLMD
 
 // TODO: implement
@@ -40,24 +47,31 @@ func IdToInt64(idString string) (*int64, error) {
 func (m *Mapper) MapToProperties(data map[string]openapi.MetadataValue) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 
-	// TODO: fix proper mapping
-	// for key, v := range data {
-	// 	value := proto.Value{}
+	for key, v := range data {
+		value := proto.Value{}
 
-	// 	switch typedValue := v.(type) {
-	// 	case int:
-	// 		value.Value = &proto.Value_IntValue{IntValue: int64(typedValue)}
-	// 	case string:
-	// 		value.Value = &proto.Value_StringValue{StringValue: typedValue}
-	// 	case float64:
-	// 		value.Value = &proto.Value_DoubleValue{DoubleValue: float64(typedValue)}
-	// 	default:
-	// 		log.Printf("Type mapping not found for %s:%v", key, v)
-	// 		continue
-	// 	}
+		switch {
+		// int value
+		case v.MetadataValueOneOf != nil:
+			intValue, err := IdToInt64(*v.MetadataValueOneOf.IntValue)
+			if err != nil {
+				log.Printf("Skipping mapping for %s:%v", key, v)
+				continue
+			}
+			value.Value = &proto.Value_IntValue{IntValue: *intValue}
+		// double value
+		case v.MetadataValueOneOf1 != nil:
+			value.Value = &proto.Value_DoubleValue{DoubleValue: *v.MetadataValueOneOf1.DoubleValue}
+		// double value
+		case v.MetadataValueOneOf2 != nil:
+			value.Value = &proto.Value_StringValue{StringValue: *v.MetadataValueOneOf2.StringValue}
+		default:
+			log.Printf("Type mapping not found for %s:%v", key, v)
+			continue
+		}
 
-	// 	props[key] = &value
-	// }
+		props[key] = &value
+	}
 
 	return props, nil
 }
@@ -73,10 +87,17 @@ func (m *Mapper) MapFromRegisteredModel(registeredModel *openapi.RegisteredModel
 		}
 	}
 
+	customProps := make(map[string]*proto.Value)
+	if registeredModel.CustomProperties != nil {
+		customProps, _ = m.MapToProperties(*registeredModel.CustomProperties)
+	}
+
 	return &proto.Context{
-		Name:   registeredModel.Name,
-		TypeId: &m.RegisteredModelTypeId,
-		Id:     idInt,
+		Name:             registeredModel.Name,
+		TypeId:           &m.RegisteredModelTypeId,
+		ExternalId:       registeredModel.ExternalID,
+		Id:               idInt,
+		CustomProperties: customProps,
 	}, nil
 }
 
@@ -143,10 +164,30 @@ func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]openapi.ModelArtifact) 
 func (m *Mapper) MapFromProperties(props map[string]*proto.Value) (map[string]openapi.MetadataValue, error) {
 	data := make(map[string]openapi.MetadataValue)
 
-	// TODO: fix proper mapping
-	// for key, v := range props {
-	// 	data[key] = v.Value
-	// }
+	for key, v := range props {
+		// data[key] = v.Value
+		customValue := openapi.MetadataValue{}
+
+		switch typedValue := v.Value.(type) {
+		case *proto.Value_IntValue:
+			customValue.MetadataValueOneOf = &openapi.MetadataValueOneOf{
+				IntValue: IdToString(typedValue.IntValue),
+			}
+		case *proto.Value_DoubleValue:
+			customValue.MetadataValueOneOf1 = &openapi.MetadataValueOneOf1{
+				DoubleValue: &typedValue.DoubleValue,
+			}
+		case *proto.Value_StringValue:
+			customValue.MetadataValueOneOf2 = &openapi.MetadataValueOneOf2{
+				StringValue: &typedValue.StringValue,
+			}
+		default:
+			log.Printf("Type mapping not found for %s:%v", key, v)
+			continue
+		}
+
+		data[key] = customValue
+	}
 
 	return data, nil
 }
@@ -164,8 +205,9 @@ func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredMo
 	idString := strconv.FormatInt(*ctx.Id, 10)
 
 	model := &openapi.RegisteredModel{
-		Id:   &idString,
-		Name: ctx.Name,
+		Id:         &idString,
+		Name:       ctx.Name,
+		ExternalID: ctx.ExternalId,
 	}
 
 	return model, nil

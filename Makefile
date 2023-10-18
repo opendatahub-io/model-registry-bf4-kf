@@ -121,8 +121,7 @@ test: gen
 
 .PHONY: clean-test
 clean-test: gen
-	go clean -testcache
-	go test ./internal/...
+	go test ./internal/... -count=1
 
 .PHONY: run/migrate
 run/migrate: gen

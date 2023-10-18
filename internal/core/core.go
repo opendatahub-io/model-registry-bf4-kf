@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	registeredModelType = "odh.RegisteredModel"
-	modelVersionType    = "odh.ModelVersion"
-	modelArtifactType   = "odh.ModelArtifact"
+	RegisteredModelTypeName = "odh.RegisteredModel"
+	ModelVersionTypeName    = "odh.ModelVersion"
+	ModelArtifactTypeName   = "odh.ModelArtifact"
 )
 
 // modelRegistryService is the core library of the model registry
@@ -33,13 +33,13 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	registeredModelReq := proto.PutContextTypeRequest{
 		ContextType: &proto.ContextType{
-			Name: &registeredModelType,
+			Name: &RegisteredModelTypeName,
 		},
 	}
 
 	modelVersionReq := proto.PutContextTypeRequest{
 		ContextType: &proto.ContextType{
-			Name: &modelVersionType,
+			Name: &ModelVersionTypeName,
 			Properties: map[string]proto.PropertyType{
 				"model_name": proto.PropertyType_STRING,
 				"version":    proto.PropertyType_STRING,
@@ -50,7 +50,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	modelArtifactReq := proto.PutArtifactTypeRequest{
 		ArtifactType: &proto.ArtifactType{
-			Name: &modelArtifactType,
+			Name: &ModelArtifactTypeName,
 			Properties: map[string]proto.PropertyType{
 				"model_format": proto.PropertyType_STRING,
 			},
@@ -59,16 +59,16 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	registeredModelResp, err := client.PutContextType(context.Background(), &registeredModelReq)
 	if err != nil {
-		log.Fatalf("Error setting up context type %s: %v", registeredModelType, err)
+		log.Fatalf("Error setting up context type %s: %v", RegisteredModelTypeName, err)
 	}
 
 	modelVersionResp, err := client.PutContextType(context.Background(), &modelVersionReq)
 	if err != nil {
-		log.Fatalf("Error setting up context type %s: %v", modelVersionType, err)
+		log.Fatalf("Error setting up context type %s: %v", ModelVersionTypeName, err)
 	}
 	modelArtifactResp, err := client.PutArtifactType(context.Background(), &modelArtifactReq)
 	if err != nil {
-		log.Fatalf("Error setting up artifact type %s: %v", modelArtifactType, err)
+		log.Fatalf("Error setting up artifact type %s: %v", ModelArtifactTypeName, err)
 	}
 
 	return &modelRegistryService{
@@ -138,7 +138,7 @@ func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, exter
 	}
 
 	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &registeredModelType,
+		TypeName: &RegisteredModelTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -164,7 +164,7 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 		return nil, ListResult{}, err
 	}
 	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &registeredModelType,
+		TypeName: &RegisteredModelTypeName,
 		Options:  listOperationOptions,
 	})
 	if err != nil {
@@ -255,7 +255,7 @@ func (serv *modelRegistryService) GetModelVersionByParams(name *string, external
 	}
 
 	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &modelVersionType,
+		TypeName: &ModelVersionTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -287,7 +287,7 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, regi
 	}
 
 	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &modelVersionType,
+		TypeName: &ModelVersionTypeName,
 		Options:  listOperationOptions,
 	})
 	if err != nil {
@@ -372,7 +372,7 @@ func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externa
 	}
 
 	artifactsResponse, err := serv.mlmdClient.GetArtifactsByType(context.Background(), &proto.GetArtifactsByTypeRequest{
-		TypeName: &modelArtifactType,
+		TypeName: &ModelArtifactTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -414,7 +414,7 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, mod
 		nextPageToken = artifactsResp.NextPageToken
 	} else {
 		artifactsResp, err := serv.mlmdClient.GetArtifactsByType(context.Background(), &proto.GetArtifactsByTypeRequest{
-			TypeName: &modelArtifactType,
+			TypeName: &ModelArtifactTypeName,
 			Options:  listOperationOptions,
 		})
 		if err != nil {

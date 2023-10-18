@@ -2,15 +2,15 @@ package core_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/opendatahub-io/model-registry/internal/core"
+	"github.com/opendatahub-io/model-registry/internal/core/mapper"
+	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/grpc"
@@ -24,75 +24,95 @@ const (
 	testConfigFolder = "test/config/ml-metadata"
 )
 
-func TestUsingContainer(t *testing.T) {
-	conn, teardown := setupTestContainer(t)
+func TestCreateRegisteredModel(t *testing.T) {
+	conn, client, teardown := SetupTestContainer(t)
 	defer teardown(t)
 
 	// [TEST CASE]
 
 	// create mode registry service
 	service, err := core.NewModelRegistryService(conn)
-	if err != nil {
-		t.Errorf("error creating core service: %v", err)
+	assert.Nilf(t, err, "error creating core service: %v", err)
+
+	modelName := "PricingModel"
+	externalId := "myExternalId"
+	owner := "Myself"
+
+	// register a new model
+	// TODO: add some custom props
+	registeredModel := &openapi.RegisteredModel{
+		Name:       &modelName,
+		ExternalID: &externalId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataValueOneOf2: &openapi.MetadataValueOneOf2{
+					StringValue: &owner,
+				},
+			},
+		},
 	}
 
-	nameModel1 := "PricingModel"
-	nameModel2 := "ForecastingModel"
-	version1 := "v1"
-	version2 := "v2"
-	author1 := "John"
-	author2 := "Jim"
-	uri1 := "/path/to/pricing/v1"
-	uri2 := "/path/to/pricing/v2"
-	modelFormat1 := "tensorflow"
-	modelFormat2 := "sklearn"
+	// test
+	createdModel, err := service.UpsertRegisteredModel(registeredModel)
 
-	// register two new models
-	registerNewModel(service, nameModel1, version1, author1, uri1, modelFormat1)
-	registerNewModel(service, nameModel2, version2, author2, uri2, modelFormat2)
+	// checks
+	assert.Nilf(t, err, "error creating registered model: %v", err)
+	assert.NotNilf(t, createdModel.Id, "created registered model should not have nil Id")
 
-	// retrieve models and log content
-	allRegModels, _, err := service.GetRegisteredModels(core.ListOptions{})
-	if err != nil {
-		log.Fatalf("Error getting all registered models: %v", err)
-	}
-	allRegModelJson, _ := json.MarshalIndent(allRegModels, "", "  ")
-	fmt.Printf("Found n. %d registered models: %v\n", len(allRegModels), string(allRegModelJson))
+	byTypeAndNameResp, err := client.GetContextByTypeAndName(context.Background(), &proto.GetContextByTypeAndNameRequest{
+		TypeName:    &core.RegisteredModelTypeName,
+		ContextName: &modelName,
+	})
+	assert.Nilf(t, err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
-	id, _ := idToInt(*allRegModels[0].Id)
-	regModel, err := service.GetRegisteredModelById((*core.BaseResourceId)(id))
-	if err != nil {
-		log.Fatalf("Error getting registered model: %v", err)
-	}
-	regModelJson, _ := json.MarshalIndent(regModel, "", "  ")
-	fmt.Printf("Getting registered model: %+v, \n", string(regModelJson))
+	ctxId := mapper.IdToString(*byTypeAndNameResp.Context.Id)
+	assert.Equal(t, *createdModel.Id, *ctxId, "returned model id should match the mlmd one")
+	assert.Equal(t, modelName, *byTypeAndNameResp.Context.Name, "saved model name should match the provided one")
+	assert.Equal(t, externalId, *byTypeAndNameResp.Context.ExternalId, "saved external id should match the provided one")
+	assert.Equal(t, owner, byTypeAndNameResp.Context.CustomProperties["owner"].GetStringValue(), "saved owner custom property should match the provided one")
+
+	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assert.Nilf(t, err, "error retrieving all contexts, not related to the test itself: %v", err)
+	assert.Equal(t, 1, len(getAllResp.Contexts), "there should be just one context saved in mlmd")
 }
 
-func registerNewModel(service core.ModelRegistryApi, name string, version string, author string, uri string, format string) {
+func TestGetRegisteredModelById(t *testing.T) {
+	conn, _, teardown := SetupTestContainer(t)
+	defer teardown(t)
+
+	// [TEST CASE]
+
+	// create mode registry service
+	service, err := core.NewModelRegistryService(conn)
+	assert.Nilf(t, err, "error creating core service: %v", err)
+
+	modelName := "PricingModel"
+	externalId := "mysupermodel"
+
+	// register a new model
+	// TODO: add some custom props
 	registeredModel := &openapi.RegisteredModel{
-		Name: &name,
+		Name:       &modelName,
+		ExternalID: &externalId,
 	}
 
-	_, err := service.UpsertRegisteredModel(registeredModel)
-	if err != nil {
-		log.Fatalf("Error creating registered model: %v", err)
-	}
+	// test
+	createdModel, err := service.UpsertRegisteredModel(registeredModel)
+
+	// checks
+	assert.Nilf(t, err, "error creating registered model: %v", err)
+
+	modelId, _ := mapper.IdToInt64(*createdModel.Id)
+	getModelById, err := service.GetRegisteredModelById((*core.BaseResourceId)(modelId))
+	assert.Nilf(t, err, "error getting registered model by id %d: %v", *modelId, err)
+
+	assert.Equal(t, modelName, *getModelById.Name, "saved model name should match the provided one")
+	assert.Equal(t, externalId, *getModelById.ExternalID, "saved external id should match the provided one")
 }
 
 // #################
 // ##### Utils #####
 // #################
-
-func idToInt(idString string) (*int64, error) {
-	idInt, err := strconv.Atoi(idString)
-	if err != nil {
-		return nil, err
-	}
-
-	idInt64 := int64(idInt)
-
-	return &idInt64, nil
-}
 
 func clearMetadataSqliteDB(wd string) error {
 	if err := os.Remove(fmt.Sprintf("%s/%s", wd, sqliteFile)); err != nil {
@@ -101,8 +121,12 @@ func clearMetadataSqliteDB(wd string) error {
 	return nil
 }
 
-// setupTestContainer create a MLMD gRPC test container returning the mlmd uri and a teardown function
-func setupTestContainer(t *testing.T) (*grpc.ClientConn, func(t *testing.T)) {
+// SetupTestContainer creates a MLMD gRPC test container
+// Returns
+//   - gRPC client connection to the test container
+//   - ml-metadata client used to double check the database
+//   - teardown function
+func SetupTestContainer(t *testing.T) (*grpc.ClientConn, proto.MetadataStoreServiceClient, func(t *testing.T)) {
 	ctx := context.Background()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -160,7 +184,9 @@ func setupTestContainer(t *testing.T) (*grpc.ClientConn, func(t *testing.T)) {
 		t.Errorf("error dialing connection to mlmd server %s: %v", mlmdAddr, err)
 	}
 
-	return conn, func(t *testing.T) {
+	mlmdClient := proto.NewMetadataStoreServiceClient(conn)
+
+	return conn, mlmdClient, func(t *testing.T) {
 		if err := conn.Close(); err != nil {
 			t.Error(err)
 		}
