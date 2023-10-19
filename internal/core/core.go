@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
@@ -80,7 +79,11 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 // REGISTERED MODELS
 
 func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *openapi.RegisteredModel) (*openapi.RegisteredModel, error) {
-	log.Printf("Creating or updating registered model for %s", *registeredModel.Name)
+	if registeredModel.Id == nil {
+		log.Printf("Creating registered model for %s", *registeredModel.Name)
+	} else {
+		log.Printf("Updating registered model %s for %s", *registeredModel.Id, *registeredModel.Name)
+	}
 
 	modelCtx, err := serv.mapper.MapFromRegisteredModel(registeredModel)
 	if err != nil {
@@ -192,6 +195,12 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 // MODEL VERSIONS
 
 func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.ModelVersion, parentResourceId *BaseResourceId) (*openapi.ModelVersion, error) {
+	if modelVersion.Id == nil {
+		log.Printf("Creating model version for %s", *modelVersion.Name)
+	} else {
+		log.Printf("Updating model version %s for %s", *modelVersion.Id, *modelVersion.Name)
+	}
+
 	registeredModel, err := serv.GetRegisteredModelById(parentResourceId)
 	if err != nil {
 		return nil, fmt.Errorf("not a valid registered model id: %d", *parentResourceId)
@@ -216,14 +225,16 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 	}
 
 	modelId := &modelCtxResp.ContextIds[0]
-	_, err = serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
-		ParentContexts: []*proto.ParentContext{{
-			ChildId:  modelId,
-			ParentId: registeredModelIdCtxID}},
-		TransactionOptions: &proto.TransactionOptions{},
-	})
-	if err != nil {
-		return nil, err
+	if modelVersion.Id == nil {
+		_, err = serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
+			ParentContexts: []*proto.ParentContext{{
+				ChildId:  modelId,
+				ParentId: registeredModelIdCtxID}},
+			TransactionOptions: &proto.TransactionOptions{},
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	model, err := serv.GetModelVersionById((*BaseResourceId)(modelId))
@@ -289,8 +300,8 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, pare
 		return nil, err
 	}
 
-	if parentResourceId != nil {
-		queryParentCtxId := fmt.Sprintf("parent_contexts_a.type = %d", *parentResourceId)
+	if registeredModelId != nil {
+		queryParentCtxId := fmt.Sprintf("parent_contexts_a.id = %d", *parentResourceId)
 		listOperationOptions.FilterQuery = &queryParentCtxId
 	}
 
@@ -323,6 +334,12 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, pare
 // MODEL ARTIFACTS
 
 func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, parentResourceId *BaseResourceId) (*openapi.ModelArtifact, error) {
+	if modelArtifact.Id == nil {
+		log.Printf("Creating model artifact for %s", *modelArtifact.Name)
+	} else {
+		log.Printf("Updating model artifact %s", *modelArtifact.Id)
+	}
+
 	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact, (*int64)(parentResourceId))
 
 	artifactsResp, err := serv.mlmdClient.PutArtifacts(context.Background(), &proto.PutArtifactsRequest{
@@ -331,11 +348,9 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 	if err != nil {
 		return nil, err
 	}
-	idString := strconv.FormatInt(artifactsResp.ArtifactIds[0], 10)
-	modelArtifact.Id = &idString
 
 	// add explicit association between artifacts and model version
-	if parentResourceId != nil {
+	if parentResourceId != nil && modelArtifact.Id == nil {
 		modelVersionIdCtx := int64(*parentResourceId)
 		attributions := []*proto.Attribution{}
 		for _, a := range artifactsResp.ArtifactIds {
@@ -353,7 +368,11 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 		}
 	}
 
-	return modelArtifact, nil
+	mapped, err := serv.GetModelArtifactById((*BaseResourceId)(&artifactsResp.ArtifactIds[0]))
+	if err != nil {
+		return nil, err
+	}
+	return mapped, nil
 }
 
 func (serv *modelRegistryService) GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error) {
