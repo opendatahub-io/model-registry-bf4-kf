@@ -67,7 +67,7 @@ func iHaveAConnectionToMR(ctx context.Context) (context.Context, error) {
 	return context.WithValue(ctx, svcLayerCtxKey{}, service), nil
 }
 
-func iStoreARegisteredModelWithNameAndAChildVersionedModelWithNameAndAChildArtifactWithUri(ctx context.Context, registedModelName, modelVersionName, artifactURI string) error {
+func iStoreARegisteredModelWithNameAndAChildModelVersionWithNameAndAChildArtifactWithUri(ctx context.Context, registedModelName, modelVersionName, artifactURI string) error {
 	service, ok := ctx.Value(svcLayerCtxKey{}).(core.ModelRegistryApi)
 	if !ok {
 		return fmt.Errorf("not found service layer connection in godog context")
@@ -85,16 +85,16 @@ func iStoreARegisteredModelWithNameAndAChildVersionedModelWithNameAndAChildArtif
 		return err
 	}
 
-	var versionedModel *openapi.ModelVersion
-	if versionedModel, err = service.UpsertModelVersion(&openapi.ModelVersion{Name: &modelVersionName}, (*core.BaseResourceId)(registeredModelId)); err != nil {
+	var modelVersion *openapi.ModelVersion
+	if modelVersion, err = service.UpsertModelVersion(&openapi.ModelVersion{Name: &modelVersionName}, (*core.BaseResourceId)(registeredModelId)); err != nil {
 		return err
 	}
-	versionedModelId, err := idToInt64(*versionedModel.Id)
+	modelVersionId, err := idToInt64(*modelVersion.Id)
 	if err != nil {
 		return err
 	}
 
-	if _, err = service.UpsertModelArtifact(&openapi.ModelArtifact{Uri: &artifactURI}, (*core.BaseResourceId)(versionedModelId)); err != nil {
+	if _, err = service.UpsertModelArtifact(&openapi.ModelArtifact{Uri: &artifactURI}, (*core.BaseResourceId)(modelVersionId)); err != nil {
 		return err
 	}
 
@@ -172,7 +172,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 		return ctx, nil
 	})
 	ctx.Step(`^I have a connection to MR$`, iHaveAConnectionToMR)
-	ctx.Step(`^I store a RegisteredModel with name "([^"]*)" and a child VersionedModel with name "([^"]*)" and a child Artifact with uri "([^"]*)"$`, iStoreARegisteredModelWithNameAndAChildVersionedModelWithNameAndAChildArtifactWithUri)
+	ctx.Step(`^I store a RegisteredModel with name "([^"]*)" and a child ModelVersion with name "([^"]*)" and a child Artifact with uri "([^"]*)"$`, iStoreARegisteredModelWithNameAndAChildModelVersionWithNameAndAChildArtifactWithUri)
 	ctx.Step(`^there should be a mlmd Context of type "([^"]*)" named "([^"]*)"$`, thereShouldBeAMlmdContextOfTypeNamed)
 	ctx.Step(`^there should be a mlmd Context of type "([^"]*)" having property named "([^"]*)" valorised with string value "([^"]*)"$`, thereShouldBeAMlmdContextOfTypeHavingPropertyNamedValorisedWithStringValue)
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
