@@ -4,14 +4,11 @@ import (
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 )
 
-func NewListResult[T any](results []T, listOptions ListOptions, nextToken *string) ListResult {
-	size := int32(len(results))
-	listResult := ListResult{
-		PageSize:      listOptions.PageSize,
-		Size:          &size,
-		NextPageToken: nextToken,
+func zeroIfNil[T any](input *T) T {
+	if input != nil {
+		return *input
 	}
-	return listResult
+	return *new(T)
 }
 
 func BuildListOperationOptions(listOptions ListOptions) (*proto.ListOperationOptions, error) {

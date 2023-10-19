@@ -158,30 +158,35 @@ func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, exter
 	return regModel, nil
 }
 
-func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) ([]*openapi.RegisteredModel, ListResult, error) {
+func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (*openapi.RegisteredModelList, error) {
 	listOperationOptions, err := BuildListOperationOptions(listOptions)
 	if err != nil {
-		return nil, ListResult{}, err
+		return nil, err
 	}
 	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
 		TypeName: &RegisteredModelTypeName,
 		Options:  listOperationOptions,
 	})
 	if err != nil {
-		return nil, ListResult{}, err
+		return nil, err
 	}
 
-	results := []*openapi.RegisteredModel{}
+	results := []openapi.RegisteredModel{}
 	for _, c := range contextsResp.Contexts {
 		mapped, err := serv.mapper.MapToRegisteredModel(c)
 		if err != nil {
-			return nil, ListResult{}, err
+			return nil, err
 		}
-		results = append(results, mapped)
+		results = append(results, *mapped)
 	}
 
-	listResult := NewListResult(contextsResp.Contexts, listOptions, contextsResp.NextPageToken)
-	return results, listResult, nil
+	toReturn := openapi.RegisteredModelList{
+		NextPageToken: zeroIfNil(contextsResp.NextPageToken),
+		PageSize:      zeroIfNil(listOptions.PageSize),
+		Size:          int32(len(results)),
+		Items:         results,
+	}
+	return &toReturn, nil
 }
 
 // MODEL VERSIONS
@@ -278,10 +283,10 @@ func (serv *modelRegistryService) GetModelVersionByParams(name *string, external
 	return modelVer, nil
 }
 
-func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*openapi.ModelVersion, ListResult, error) {
+func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) (*openapi.ModelVersionList, error) {
 	listOperationOptions, err := BuildListOperationOptions(listOptions)
 	if err != nil {
-		return nil, ListResult{}, err
+		return nil, err
 	}
 
 	if registeredModelId != nil {
@@ -294,20 +299,25 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, regi
 		Options:  listOperationOptions,
 	})
 	if err != nil {
-		return nil, ListResult{}, err
+		return nil, err
 	}
 
-	results := []*openapi.ModelVersion{}
+	results := []openapi.ModelVersion{}
 	for _, c := range contextsResp.Contexts {
 		mapped, err := serv.mapper.MapToModelVersion(c)
 		if err != nil {
-			return nil, ListResult{}, err
+			return nil, err
 		}
-		results = append(results, mapped)
+		results = append(results, *mapped)
 	}
 
-	listResult := NewListResult(contextsResp.Contexts, listOptions, contextsResp.NextPageToken)
-	return results, listResult, nil
+	toReturn := openapi.ModelVersionList{
+		NextPageToken: zeroIfNil(contextsResp.NextPageToken),
+		PageSize:      zeroIfNil(listOptions.PageSize),
+		Size:          int32(len(results)),
+		Items:         results,
+	}
+	return &toReturn, nil
 }
 
 // MODEL ARTIFACTS
@@ -396,10 +406,10 @@ func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externa
 	return result, nil
 }
 
-func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) ([]*openapi.ModelArtifact, ListResult, error) {
+func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) (*openapi.ModelArtifactList, error) {
 	listOperationOptions, err := BuildListOperationOptions(listOptions)
 	if err != nil {
-		return nil, ListResult{}, err
+		return nil, err
 	}
 
 	var artifacts []*proto.Artifact
@@ -411,7 +421,7 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, mod
 			Options:   listOperationOptions,
 		})
 		if err != nil {
-			return nil, ListResult{}, err
+			return nil, err
 		}
 		artifacts = artifactsResp.Artifacts
 		nextPageToken = artifactsResp.NextPageToken
@@ -421,21 +431,26 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, mod
 			Options:  listOperationOptions,
 		})
 		if err != nil {
-			return nil, ListResult{}, err
+			return nil, err
 		}
 		artifacts = artifactsResp.Artifacts
 		nextPageToken = artifactsResp.NextPageToken
 	}
 
-	results := []*openapi.ModelArtifact{}
+	results := []openapi.ModelArtifact{}
 	for _, a := range artifacts {
 		mapped, err := serv.mapper.MapToModelArtifact(a)
 		if err != nil {
-			return nil, ListResult{}, err
+			return nil, err
 		}
-		results = append(results, mapped)
+		results = append(results, *mapped)
 	}
 
-	listResult := NewListResult(artifacts, listOptions, nextPageToken)
-	return results, listResult, nil
+	toReturn := openapi.ModelArtifactList{
+		NextPageToken: zeroIfNil(nextPageToken),
+		PageSize:      zeroIfNil(listOptions.PageSize),
+		Size:          int32(len(results)),
+		Items:         results,
+	}
+	return &toReturn, nil
 }

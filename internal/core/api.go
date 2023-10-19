@@ -12,19 +12,6 @@ type ListOptions struct {
 	NextPageToken *string
 }
 
-type ListResult struct {
-	PageSize      *int32
-	Size          *int32
-	NextPageToken *string
-}
-
-// type ListRes[T any] struct {
-// 	Items         []*T
-// 	PageSize      *int32
-// 	Size          *int32
-// 	NextPageToken *string
-// }
-
 type ModelRegistryApi interface {
 	// REGISTERED MODEL
 
@@ -34,7 +21,7 @@ type ModelRegistryApi interface {
 
 	GetRegisteredModelById(id *BaseResourceId) (*openapi.RegisteredModel, error)
 	GetRegisteredModelByParams(name *string, externalId *string) (*openapi.RegisteredModel, error)
-	GetRegisteredModels(listOptions ListOptions) ([]*openapi.RegisteredModel, ListResult, error)
+	GetRegisteredModels(listOptions ListOptions) (*openapi.RegisteredModelList, error)
 
 	// MODEL VERSION
 
@@ -44,7 +31,7 @@ type ModelRegistryApi interface {
 
 	GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error)
 	GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error)
-	GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) ([]*openapi.ModelVersion, ListResult, error)
+	GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) (*openapi.ModelVersionList, error)
 
 	// MODEL ARTIFACT
 
@@ -54,5 +41,5 @@ type ModelRegistryApi interface {
 
 	GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error)
 	GetModelArtifactByParams(name *string, externalId *string) (*openapi.ModelArtifact, error)
-	GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) ([]*openapi.ModelArtifact, ListResult, error)
+	GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) (*openapi.ModelArtifactList, error)
 }
