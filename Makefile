@@ -119,8 +119,8 @@ lint: gen
 test: gen
 	go test ./internal/...
 
-.PHONY: clean-test
-clean-test: gen
+.PHONY: test-nocache
+test-nocache: gen
 	go test ./internal/... -count=1
 
 .PHONY: run/migrate
