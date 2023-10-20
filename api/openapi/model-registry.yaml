@@ -372,33 +372,6 @@ paths:
           type: string
         in: path
         required: true
-  /api/model_registry/v1alpha1/model_version:
-    summary: Path used to search for a modelversion.
-    description: >-
-      The REST endpoint/path used to search for a `ModelVersion` entity.  This path contains a `GET`
-      operation to perform the find task.
-    get:
-      tags:
-        - ModelRegistryService
-      responses:
-        '200':
-          $ref: '#/components/responses/ModelVersionResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      operationId: findModelVersion
-      summary: Get a ModelVersion that matches search parameters.
-      description: Gets the details of a single instance of a `ModelVersion` that matches search parameters.
-    parameters:
-      -
-        $ref: '#/components/parameters/name'
-      -
-        $ref: '#/components/parameters/externalID'
   '/api/model_registry/v1alpha1/model_versions/{modelversionId}/artifacts':
     summary: Path used to manage the list of artifacts for a modelversion.
     description: >-
@@ -981,6 +954,35 @@ paths:
           type: string
         in: path
         required: true
+  /api/model_registry/v1alpha1/model_version:
+    summary: Path used to search for a modelversion.
+    description: >-
+      The REST endpoint/path used to search for a `ModelVersion` entity.  This path contains a `GET`
+      operation to perform the find task.
+    get:
+      tags:
+        - ModelRegistryService
+      responses:
+        '200':
+          $ref: '#/components/responses/ModelVersionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      operationId: findModelVersion
+      summary: Get a ModelVersion that matches search parameters.
+      description: Gets the details of a single instance of a `ModelVersion` that matches search parameters.
+    parameters:
+      -
+        $ref: '#/components/parameters/name'
+      -
+        $ref: '#/components/parameters/externalID'
+      -
+        $ref: '#/components/parameters/registeredModelID'
 components:
   schemas:
     ArtifactState:
@@ -1672,6 +1674,16 @@ components:
           value: '10'
       name: externalID
       description: External ID of entity to search.
+      schema:
+        type: string
+      in: query
+      required: false
+    registeredModelID:
+      examples:
+        registeredModelID:
+          value: '10'
+      name: registeredModelID
+      description: ID of the `RegisteredModel` to use for search.
       schema:
         type: string
       in: query
