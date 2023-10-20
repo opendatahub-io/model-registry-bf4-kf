@@ -254,10 +254,10 @@ func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*open
 	return modelVer, nil
 }
 
-func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, registeredModelID *string, externalId *string) (*openapi.ModelVersion, error) {
+func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, registeredModelId *BaseResourceId, externalId *string) (*openapi.ModelVersion, error) {
 	filterQuery := ""
-	if versionName != nil && registeredModelID != nil {
-		filterQuery = fmt.Sprintf("name = \"%s:%s\"", *registeredModelID, *versionName)
+	if versionName != nil && registeredModelId != nil {
+		filterQuery = fmt.Sprintf("name = \"%s\"", mapper.PrefixWhenOwned((*int64)(registeredModelId), *versionName))
 	} else if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
 	}
@@ -273,7 +273,7 @@ func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, r
 	}
 
 	if len(getByParamsResp.Contexts) != 1 {
-		return nil, fmt.Errorf("multiple registered models found for versionName=%v, registeredModelID=%v, externalId=%v", zeroIfNil(versionName), zeroIfNil(registeredModelID), zeroIfNil(externalId))
+		return nil, fmt.Errorf("multiple registered models found for versionName=%v, registeredModelID=%v, externalId=%v", zeroIfNil(versionName), zeroIfNil(registeredModelId), zeroIfNil(externalId))
 	}
 
 	modelVer, err := serv.mapper.MapToModelVersion(getByParamsResp.Contexts[0])
@@ -323,7 +323,7 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, regi
 // MODEL ARTIFACTS
 
 func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *BaseResourceId) (*openapi.ModelArtifact, error) {
-	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact)
+	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact, (*int64)(modelVersionId))
 
 	artifactsResp, err := serv.mlmdClient.PutArtifacts(context.Background(), &proto.PutArtifactsRequest{
 		Artifacts: []*proto.Artifact{artifact},
@@ -372,16 +372,16 @@ func (serv *modelRegistryService) GetModelArtifactById(id *BaseResourceId) (*ope
 	return result, nil
 }
 
-func (serv *modelRegistryService) GetModelArtifactByParams(name *string, externalId *string) (*openapi.ModelArtifact, error) {
+func (serv *modelRegistryService) GetModelArtifactByParams(artifactName *string, modelVersionId *BaseResourceId, externalId *string) (*openapi.ModelArtifact, error) {
 	var artifact0 *proto.Artifact
 
 	filterQuery := ""
 	if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
-	} else if name != nil {
-		filterQuery = fmt.Sprintf("name = \"%s\"", *name)
+	} else if artifactName != nil && modelVersionId != nil {
+		filterQuery = fmt.Sprintf("name = \"%s\"", mapper.PrefixWhenOwned((*int64)(modelVersionId), *artifactName))
 	} else {
-		return nil, fmt.Errorf("invalid parameters call, supply either name or externalId")
+		return nil, fmt.Errorf("invalid parameters call, supply either (artifactName and modelVersionId), or externalId")
 	}
 
 	artifactsResponse, err := serv.mlmdClient.GetArtifactsByType(context.Background(), &proto.GetArtifactsByTypeRequest{

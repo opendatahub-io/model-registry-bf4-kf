@@ -30,7 +30,7 @@ type ModelRegistryApi interface {
 	UpsertModelVersion(modelVersion *openapi.ModelVersion, registeredModelId *BaseResourceId) (*openapi.ModelVersion, error)
 
 	GetModelVersionById(id *BaseResourceId) (*openapi.ModelVersion, error)
-	GetModelVersionByParams(versionName *string, registeredModelID *string, externalId *string) (*openapi.ModelVersion, error)
+	GetModelVersionByParams(versionName *string, registeredModelId *BaseResourceId, externalId *string) (*openapi.ModelVersion, error)
 	GetModelVersions(listOptions ListOptions, registeredModelId *BaseResourceId) (*openapi.ModelVersionList, error)
 
 	// MODEL ARTIFACT
@@ -40,6 +40,6 @@ type ModelRegistryApi interface {
 	UpsertModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *BaseResourceId) (*openapi.ModelArtifact, error)
 
 	GetModelArtifactById(id *BaseResourceId) (*openapi.ModelArtifact, error)
-	GetModelArtifactByParams(name *string, externalId *string) (*openapi.ModelArtifact, error)
+	GetModelArtifactByParams(artifactName *string, modelVersionId *BaseResourceId, externalId *string) (*openapi.ModelArtifact, error)
 	GetModelArtifacts(listOptions ListOptions, modelVersionId *BaseResourceId) (*openapi.ModelArtifactList, error)
 }
