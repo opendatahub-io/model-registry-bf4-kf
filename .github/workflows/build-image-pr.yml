@@ -1,12 +1,12 @@
 name: Test container image build
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [ '*' ]
 
 env:
-  IMAGE_REPO_MR: model-registry
-  QUAY_ORG: opendatahub
+  QUAY_IMG_REPO: model-registry
+  PUSH_IMAGE: false
 
 jobs:
   build-image:
@@ -21,12 +21,7 @@ jobs:
           tag=main-${commit_sha:0:7}
           echo "tag=${tag}" >> $GITHUB_OUTPUT
       - name: Build Image
-        uses: ./.github/actions/build-image
+        shell: bash
         env:
-          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.IMAGE_REPO_MR }}:${{ steps.tags.outputs.tag }}
-          TARGET_IMAGE_TAG: ${{ steps.tags.outputs.tag }}
-        with:
-          SKIP_IF_EXISTING: false
-          IMAGE_REPO: ${{ env.IMAGE_REPO_MR }}
-          DOCKERFILE: Dockerfile
-          PUSH: false
+          VERSION: ${{ steps.tags.outputs.tag }}
+        run: ./scripts/build_deploy.sh

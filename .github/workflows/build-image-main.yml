@@ -5,10 +5,10 @@ on:
     branches: [ 'main' ]
 
 env:
-  IMAGE_REPO_MR: model-registry
-  QUAY_ORG: opendatahub
+  QUAY_IMG_REPO: model-registry
   QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
   QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+  PUSH_IMAGE: true
 
 jobs:
   build-image:
@@ -22,23 +22,30 @@ jobs:
           commit_sha=${{ github.event.after }}
           tag=main-${commit_sha:0:7}
           echo "tag=${tag}" >> $GITHUB_OUTPUT
-      - name: Build Image
-        uses: ./.github/actions/build-image
-        env:
-          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.IMAGE_REPO_MR }}:${{ steps.tags.outputs.tag }}
-          TARGET_IMAGE_TAG: ${{ steps.tags.outputs.tag }}
-        with:
-          SKIP_IF_EXISTING: false
-          IMAGE_REPO: ${{ env.IMAGE_REPO_MR }}
-          DOCKERFILE: Dockerfile
-          PUSH: true
-      - name: Tag latest
+      - name: Build and Push Image
         shell: bash
         env:
-          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.IMAGE_REPO_MR }}
+          VERSION: ${{ steps.tags.outputs.tag }}
+        run: ./scripts/build_deploy.sh
+      - name: Tag Latest
+        shell: bash
+        env:
+          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_IMG_REPO }}
+          BUILD_IMAGE: false
           NEWEST_TAG: ${{ steps.tags.outputs.tag }}
+          VERSION: latest
         run: |
-          docker tag ${IMG}:${NEWEST_TAG} ${IMG}:latest
-          docker push ${IMG}:latest
-          docker tag ${IMG}:${NEWEST_TAG} ${IMG}:main
-          docker push ${IMG}:main
+          docker tag ${{ env.IMG }}:${{ env.NEWEST_TAG }} ${{ env.IMG }}:${{ env.VERSION }}
+          # BUILD_IMAGE=false skip the build
+          ./scripts/build_deploy.sh
+      - name: Tag Main
+        shell: bash
+        env:
+          IMG: quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_IMG_REPO }}
+          BUILD_IMAGE: false
+          NEWEST_TAG: ${{ steps.tags.outputs.tag }}
+          VERSION: main
+        run: |
+          docker tag ${{ env.IMG }}:${{ env.NEWEST_TAG }} ${{ env.IMG }}:${{ env.VERSION }}
+          # BUILD_IMAGE=false skip the build
+          ./scripts/build_deploy.sh
