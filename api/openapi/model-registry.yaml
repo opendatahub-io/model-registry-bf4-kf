@@ -37,6 +37,8 @@ paths:
         $ref: '#/components/parameters/name'
       -
         $ref: '#/components/parameters/externalID'
+      -
+        $ref: '#/components/parameters/modelVersionID'
   /api/model_registry/v1alpha1/model_artifacts:
     summary: Path used to manage the list of modelartifacts.
     description: >-
@@ -1684,6 +1686,16 @@ components:
           value: '10'
       name: registeredModelID
       description: ID of the `RegisteredModel` to use for search.
+      schema:
+        type: string
+      in: query
+      required: false
+    modelVersionID:
+      examples:
+        modelVersionID:
+          value: '11'
+      name: modelVersionID
+      description: ID of the `ModelVersion` to use for search.
       schema:
         type: string
       in: query
