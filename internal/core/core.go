@@ -254,10 +254,10 @@ func (serv *modelRegistryService) GetModelVersionById(id *BaseResourceId) (*open
 	return modelVer, nil
 }
 
-func (serv *modelRegistryService) GetModelVersionByParams(name *string, externalId *string) (*openapi.ModelVersion, error) {
+func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, registeredModelID *string, externalId *string) (*openapi.ModelVersion, error) {
 	filterQuery := ""
-	if name != nil {
-		filterQuery = fmt.Sprintf("name = \"%s\"", *name)
+	if versionName != nil && registeredModelID != nil {
+		filterQuery = fmt.Sprintf("name = \"%s:%s\"", *registeredModelID, *versionName)
 	} else if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
 	}
@@ -273,7 +273,7 @@ func (serv *modelRegistryService) GetModelVersionByParams(name *string, external
 	}
 
 	if len(getByParamsResp.Contexts) != 1 {
-		return nil, fmt.Errorf("multiple registered models found for name=%v, externalId=%v", *name, *externalId)
+		return nil, fmt.Errorf("multiple registered models found for versionName=%v, registeredModelID=%v, externalId=%v", zeroIfNil(versionName), zeroIfNil(registeredModelID), zeroIfNil(externalId))
 	}
 
 	modelVer, err := serv.mapper.MapToModelVersion(getByParamsResp.Contexts[0])

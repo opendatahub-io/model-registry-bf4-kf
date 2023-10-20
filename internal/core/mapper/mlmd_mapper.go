@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
@@ -266,7 +267,7 @@ func (m *Mapper) MapToModelVersion(ctx *proto.Context) (*openapi.ModelVersion, e
 	modelVersion := &openapi.ModelVersion{
 		// ModelName: &modelName,
 		Id:   &idString,
-		Name: ctx.Name,
+		Name: &strings.Split(*ctx.Name, ":")[1],
 		// Author:   &author,
 		CustomProperties: &metadata,
 	}
