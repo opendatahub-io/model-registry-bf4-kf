@@ -129,7 +129,7 @@ gen: deps gen/grpc gen/openapi gen/graph gen/converter
 .PHONY: lint
 lint: gen
 	golangci-lint run main.go
-	golangci-lint run cmd/... internal/... test/bdd/...
+	golangci-lint run cmd/... internal/...
 
 .PHONY: test
 test: gen
