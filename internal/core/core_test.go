@@ -638,8 +638,6 @@ func TestUpdateModelVersion(t *testing.T) {
 	newScore := 0.95
 
 	createdVersion.ExternalID = &newExternalId
-	// keep the original name. TODO remove once https://github.com/opendatahub-io/model-registry/pull/79 got merged
-	createdVersion.Name = &modelVersionName
 	(*createdVersion.CustomProperties)["score"] = openapi.MetadataValue{
 		MetadataDoubleValue: &openapi.MetadataDoubleValue{
 			DoubleValue: &newScore,
@@ -712,8 +710,7 @@ func TestGetModelVersionById(t *testing.T) {
 
 	ctx := ctxById.Contexts[0]
 	assertion.Equal(*getById.Id, *mapper.IdToString(*ctx.Id), "returned model version id should match the mlmd context one")
-	// TODO uncomment once https://github.com/opendatahub-io/model-registry/pull/79 got merged, for now *getById.Name == *ctx.Name
-	// assertion.Equal(fmt.Sprintf("%d:%s", registeredModelId, *getById.Name), *ctx.Name, "saved model name should match the provided one")
+	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getById.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*getById.ExternalID, *modelVersion.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(*(*getById.CustomProperties)["author"].MetadataStringValue.StringValue, author, "saved author custom property should match the provided one")
 }
@@ -745,11 +742,7 @@ func TestGetModelVersionByParamsName(t *testing.T) {
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
 	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
 
-	// TODO use just modelVersionName once https://github.com/opendatahub-io/model-registry/pull/79 got merged
-	ctxName := fmt.Sprintf("%s:%s", registeredModelId, modelVersionName)
-
-	// TODO: fix name + parentId
-	getByName, err := service.GetModelVersionByParams(&ctxName, nil, nil)
+	getByName, err := service.GetModelVersionByParams(&modelVersionName, &registeredModelId, nil)
 	assertion.Nilf(err, "error getting model version by name %d", *createdVersionId)
 
 	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
@@ -761,8 +754,7 @@ func TestGetModelVersionByParamsName(t *testing.T) {
 
 	ctx := ctxById.Contexts[0]
 	assertion.Equal(*mapper.IdToString(*ctx.Id), *getByName.Id, "returned model version id should match the mlmd context one")
-	// TODO uncomment once https://github.com/opendatahub-io/model-registry/pull/79 got merged, for now *getById.Name == *ctx.Name
-	// assertion.Equal(fmt.Sprintf("%d:%s", registeredModelId, *getById.Name), *ctx.Name, "saved model name should match the provided one")
+	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getByName.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*ctx.ExternalId, *getByName.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByName.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
 }
@@ -806,8 +798,7 @@ func TestGetModelVersionByParamsExternalId(t *testing.T) {
 
 	ctx := ctxById.Contexts[0]
 	assertion.Equal(*mapper.IdToString(*ctx.Id), *getByExternalId.Id, "returned model version id should match the mlmd context one")
-	// TODO uncomment once https://github.com/opendatahub-io/model-registry/pull/79 got merged, for now *getById.Name == *ctx.Name
-	// assertion.Equal(fmt.Sprintf("%d:%s", registeredModelId, *getById.Name), *ctx.Name, "saved model name should match the provided one")
+	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getByExternalId.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*ctx.ExternalId, *getByExternalId.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByExternalId.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
 }
@@ -953,7 +944,7 @@ func TestCreateModelArtifact(t *testing.T) {
 	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
 
 	assertion.Equal(*createdArtifactId, *getById.Artifacts[0].Id)
-	assertion.Equal(*createdArtifact.Name, *getById.Artifacts[0].Name)
+	assertion.Equal(fmt.Sprintf("%s:%s", modelVersionId, *createdArtifact.Name), *getById.Artifacts[0].Name)
 	assertion.Equal(string(*createdArtifact.State), getById.Artifacts[0].State.String())
 	assertion.Equal(*createdArtifact.Uri, *getById.Artifacts[0].Uri)
 	assertion.Equal(*(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Artifacts[0].CustomProperties["author"].GetStringValue())
@@ -1006,7 +997,7 @@ func TestUpdateModelArtifact(t *testing.T) {
 	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
 
 	assertion.Equal(*createdArtifactId, *getById.Artifacts[0].Id)
-	assertion.Equal(*createdArtifact.Name, *getById.Artifacts[0].Name)
+	assertion.Equal(fmt.Sprintf("%s:%s", modelVersionId, *createdArtifact.Name), *getById.Artifacts[0].Name)
 	assertion.Equal(string(newState), getById.Artifacts[0].State.String())
 	assertion.Equal(*createdArtifact.Uri, *getById.Artifacts[0].Uri)
 	assertion.Equal(*(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Artifacts[0].CustomProperties["author"].GetStringValue())
@@ -1082,8 +1073,7 @@ func TestGetModelArtifactByParams(t *testing.T) {
 
 	state, _ := openapi.NewArtifactStateFromValue(artifactState)
 
-	// TODO: fix name + parentId
-	getByName, err := service.GetModelArtifactByParams(&artifactName, nil, nil)
+	getByName, err := service.GetModelArtifactByParams(&artifactName, &modelVersionId, nil)
 	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
 
 	assertion.NotNil(createdArtifact.Id, "created artifact id should not be nil")
