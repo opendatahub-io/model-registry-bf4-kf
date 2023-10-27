@@ -21,15 +21,15 @@ import (
 )
 
 // ModelRegistryServiceAPIService is a service that implements the logic for the ModelRegistryServiceAPIServicer
-// This service should implement the business logic for every endpoint for the ModelRegistryServiceAPI API.
+// This service should implement the business logic for every endpoint for the ModelRegistryServiceAPI s.coreApi.
 // Include any external packages or services that will be required by this service.
 type ModelRegistryServiceAPIService struct {
-	coreApi   *core.ModelRegistryApi
+	coreApi   core.ModelRegistryApi
 	converter converter.OpenAPIConverter
 }
 
 // NewModelRegistryServiceAPIService creates a default api service
-func NewModelRegistryServiceAPIService(coreApi *core.ModelRegistryApi) ModelRegistryServiceAPIServicer {
+func NewModelRegistryServiceAPIService(coreApi core.ModelRegistryApi) ModelRegistryServiceAPIServicer {
 	return &ModelRegistryServiceAPIService{
 		coreApi:   coreApi,
 		converter: &generated.OpenAPIConverterImpl{},
@@ -124,13 +124,12 @@ func (s *ModelRegistryServiceAPIService) CreateModelArtifact(ctx context.Context
 
 // CreateModelVersion - Create a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersion(ctx context.Context, modelVersionCreate model.ModelVersionCreate) (ImplResponse, error) {
-	api := *s.coreApi
 	modelVersion, err := s.converter.ConvertModelVersionCreate(&modelVersionCreate)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
 
-	result, err := api.UpsertModelVersion(modelVersion, &modelVersionCreate.RegisteredModelID)
+	result, err := s.coreApi.UpsertModelVersion(modelVersion, &modelVersionCreate.RegisteredModelID)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -141,8 +140,7 @@ func (s *ModelRegistryServiceAPIService) CreateModelVersion(ctx context.Context,
 
 // CreateModelVersionArtifact - Create an Artifact in a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.Context, modelversionId string, artifact model.Artifact) (ImplResponse, error) {
-	api := *s.coreApi
-	result, err := api.UpsertModelArtifact(artifact.ModelArtifact, &modelversionId)
+	result, err := s.coreApi.UpsertModelArtifact(artifact.ModelArtifact, &modelversionId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -154,14 +152,13 @@ func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.
 
 // CreateRegisteredModel - Create a RegisteredModel
 func (s *ModelRegistryServiceAPIService) CreateRegisteredModel(ctx context.Context, registeredModelCreate model.RegisteredModelCreate) (ImplResponse, error) {
-	api := *s.coreApi
 
 	registeredModel, err := s.converter.ConvertRegisteredModelCreate(&registeredModelCreate)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
 
-	result, err := api.UpsertRegisteredModel(registeredModel)
+	result, err := s.coreApi.UpsertRegisteredModel(registeredModel)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -447,8 +444,7 @@ func (s *ModelRegistryServiceAPIService) GetInferenceServices(ctx context.Contex
 
 // GetModelArtifact - Get a ModelArtifact
 func (s *ModelRegistryServiceAPIService) GetModelArtifact(ctx context.Context, modelartifactId string) (ImplResponse, error) {
-	api := *s.coreApi
-	result, err := api.GetModelArtifactById(modelartifactId)
+	result, err := s.coreApi.GetModelArtifactById(modelartifactId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -482,8 +478,7 @@ func (s *ModelRegistryServiceAPIService) GetModelArtifacts(ctx context.Context, 
 
 // GetModelVersion - Get a ModelVersion
 func (s *ModelRegistryServiceAPIService) GetModelVersion(ctx context.Context, modelversionId string) (ImplResponse, error) {
-	api := *s.coreApi
-	result, err := api.GetModelVersionById(modelversionId)
+	result, err := s.coreApi.GetModelVersionById(modelversionId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -531,8 +526,7 @@ func (s *ModelRegistryServiceAPIService) GetModelVersions(ctx context.Context, p
 
 // GetRegisteredModel - Get a RegisteredModel
 func (s *ModelRegistryServiceAPIService) GetRegisteredModel(ctx context.Context, registeredmodelId string) (ImplResponse, error) {
-	api := *s.coreApi
-	result, err := api.GetRegisteredModelById(registeredmodelId)
+	result, err := s.coreApi.GetRegisteredModelById(registeredmodelId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}

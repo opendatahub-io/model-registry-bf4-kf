@@ -49,7 +49,7 @@ func runProxyServer(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ModelRegistryServiceAPIService := openapi.NewModelRegistryServiceAPIService(&service)
+	ModelRegistryServiceAPIService := openapi.NewModelRegistryServiceAPIService(service)
 	ModelRegistryServiceAPIController := openapi.NewModelRegistryServiceAPIController(ModelRegistryServiceAPIService)
 
 	router := openapi.NewRouter(ModelRegistryServiceAPIController)
