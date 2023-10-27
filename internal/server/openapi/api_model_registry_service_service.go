@@ -121,48 +121,39 @@ func (s *ModelRegistryServiceAPIService) CreateModelArtifact(ctx context.Context
 
 // CreateModelVersion - Create a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersion(ctx context.Context, modelVersionCreate model.ModelVersionCreate) (ImplResponse, error) {
-	// TODO - update CreateModelVersion with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(201, ModelVersion{}) or use other options such as http.Ok ...
-	// return Response(201, ModelVersion{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("CreateModelVersion method not implemented")
+	api := *s.coreApi
+	parentResourceId, err := mapper.IdToInt64(modelVersionCreate.RegisteredModelID)
+	if err != nil {
+		return Response(400, model.Error{Message: err.Error()}), nil
+	}
+	result, err := api.UpsertModelVersion(&model.ModelVersion{
+		CustomProperties: modelVersionCreate.CustomProperties,
+		ExternalID:       modelVersionCreate.ExternalID,
+		Name:             modelVersionCreate.Name,
+	}, (*core.BaseResourceId)(parentResourceId))
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(201, result), nil
+	// TODO: return Response(400, Error{}), nil
+	// TODO: return Response(401, Error{}), nil
 }
 
 // CreateModelVersionArtifact - Create an Artifact in a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.Context, modelversionId string, artifact model.Artifact) (ImplResponse, error) {
-	// TODO - update CreateModelVersionArtifact with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, Artifact{}) or use other options such as http.Ok ...
-	// return Response(200, Artifact{}), nil
-
-	// TODO: Uncomment the next line to return response Response(201, Artifact{}) or use other options such as http.Ok ...
-	// return Response(201, Artifact{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("CreateModelVersionArtifact method not implemented")
+	api := *s.coreApi
+	parentResourceId, err := mapper.IdToInt64(modelversionId)
+	if err != nil {
+		return Response(400, model.Error{Message: err.Error()}), nil
+	}
+	result, err := api.UpsertModelArtifact(artifact.ModelArtifact, (*core.BaseResourceId)(parentResourceId))
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(201, result), nil
+	// TODO return Response(200, Artifact{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // CreateRegisteredModel - Create a RegisteredModel
@@ -458,22 +449,18 @@ func (s *ModelRegistryServiceAPIService) GetInferenceServices(ctx context.Contex
 
 // GetModelArtifact - Get a ModelArtifact
 func (s *ModelRegistryServiceAPIService) GetModelArtifact(ctx context.Context, modelartifactId string) (ImplResponse, error) {
-	// TODO - update GetModelArtifact with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelArtifact{}) or use other options such as http.Ok ...
-	// return Response(200, ModelArtifact{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetModelArtifact method not implemented")
+	api := *s.coreApi
+	id, err := mapper.IdToInt64(modelartifactId)
+	if err != nil {
+		return Response(400, model.Error{Message: err.Error()}), nil
+	}
+	result, err := api.GetModelArtifactById((*core.BaseResourceId)(id))
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO: return Response(401, Error{}), nil
+	// TODO: return Response(404, Error{}), nil
 }
 
 // GetModelArtifacts - List All ModelArtifacts
@@ -501,22 +488,18 @@ func (s *ModelRegistryServiceAPIService) GetModelArtifacts(ctx context.Context, 
 
 // GetModelVersion - Get a ModelVersion
 func (s *ModelRegistryServiceAPIService) GetModelVersion(ctx context.Context, modelversionId string) (ImplResponse, error) {
-	// TODO - update GetModelVersion with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelVersion{}) or use other options such as http.Ok ...
-	// return Response(200, ModelVersion{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetModelVersion method not implemented")
+	api := *s.coreApi
+	id, err := mapper.IdToInt64(modelversionId)
+	if err != nil {
+		return Response(400, model.Error{Message: err.Error()}), nil
+	}
+	result, err := api.GetModelVersionById((*core.BaseResourceId)(id))
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO: return Response(401, Error{}), nil
+	// TODO: return Response(404, Error{}), nil
 }
 
 // GetModelVersionArtifacts - List All ModelVersion&#39;s artifacts
