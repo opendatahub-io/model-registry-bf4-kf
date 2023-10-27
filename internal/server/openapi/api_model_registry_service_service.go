@@ -12,19 +12,25 @@ package openapi
 import (
 	"context"
 	"errors"
-	model "github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"net/http"
+
+	"github.com/opendatahub-io/model-registry/internal/core"
+	"github.com/opendatahub-io/model-registry/internal/core/mapper"
+	model "github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
 
 // ModelRegistryServiceAPIService is a service that implements the logic for the ModelRegistryServiceAPIServicer
 // This service should implement the business logic for every endpoint for the ModelRegistryServiceAPI API.
 // Include any external packages or services that will be required by this service.
 type ModelRegistryServiceAPIService struct {
+	coreApi *core.ModelRegistryApi
 }
 
 // NewModelRegistryServiceAPIService creates a default api service
-func NewModelRegistryServiceAPIService() ModelRegistryServiceAPIServicer {
-	return &ModelRegistryServiceAPIService{}
+func NewModelRegistryServiceAPIService(coreApi *core.ModelRegistryApi) ModelRegistryServiceAPIServicer {
+	return &ModelRegistryServiceAPIService{
+		coreApi: coreApi,
+	}
 }
 
 // CreateEnvironmentInferenceService - Create a InferenceService in ServingEnvironment
@@ -161,22 +167,18 @@ func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.
 
 // CreateRegisteredModel - Create a RegisteredModel
 func (s *ModelRegistryServiceAPIService) CreateRegisteredModel(ctx context.Context, registeredModelCreate model.RegisteredModelCreate) (ImplResponse, error) {
-	// TODO - update CreateRegisteredModel with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(201, RegisteredModel{}) or use other options such as http.Ok ...
-	// return Response(201, RegisteredModel{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("CreateRegisteredModel method not implemented")
+	api := *s.coreApi
+	result, err := api.UpsertRegisteredModel(&model.RegisteredModel{
+		CustomProperties: registeredModelCreate.CustomProperties,
+		ExternalID:       registeredModelCreate.ExternalID,
+		Name:             registeredModelCreate.Name,
+	})
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(201, result), nil
+	// TODO: return Response(400, Error{}), nil
+	// TODO: return Response(401, Error{}), nil
 }
 
 // CreateRegisteredModelVersion - Create a ModelVersion in RegisteredModel
@@ -556,22 +558,18 @@ func (s *ModelRegistryServiceAPIService) GetModelVersions(ctx context.Context, p
 
 // GetRegisteredModel - Get a RegisteredModel
 func (s *ModelRegistryServiceAPIService) GetRegisteredModel(ctx context.Context, registeredmodelId string) (ImplResponse, error) {
-	// TODO - update GetRegisteredModel with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, RegisteredModel{}) or use other options such as http.Ok ...
-	// return Response(200, RegisteredModel{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetRegisteredModel method not implemented")
+	api := *s.coreApi
+	id, err := mapper.IdToInt64(registeredmodelId)
+	if err != nil {
+		return Response(400, model.Error{Message: err.Error()}), nil
+	}
+	result, err := api.GetRegisteredModelById((*core.BaseResourceId)(id))
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO: return Response(401, Error{}), nil
+	// TODO: return Response(404, Error{}), nil
 }
 
 // GetRegisteredModelVersions - List All RegisteredModel&#39;s ModelVersions
