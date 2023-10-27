@@ -3,3 +3,6 @@
 model-registry
 metadata.sqlite.db
 vendor
+log.html
+output.xml
+report.html

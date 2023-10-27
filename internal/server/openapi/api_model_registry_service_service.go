@@ -14,6 +14,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/opendatahub-io/model-registry/internal/converter"
+	"github.com/opendatahub-io/model-registry/internal/converter/generated"
 	"github.com/opendatahub-io/model-registry/internal/core"
 	model "github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
@@ -22,13 +24,15 @@ import (
 // This service should implement the business logic for every endpoint for the ModelRegistryServiceAPI API.
 // Include any external packages or services that will be required by this service.
 type ModelRegistryServiceAPIService struct {
-	coreApi *core.ModelRegistryApi
+	coreApi   *core.ModelRegistryApi
+	converter converter.OpenAPIConverter
 }
 
 // NewModelRegistryServiceAPIService creates a default api service
 func NewModelRegistryServiceAPIService(coreApi *core.ModelRegistryApi) ModelRegistryServiceAPIServicer {
 	return &ModelRegistryServiceAPIService{
-		coreApi: coreApi,
+		coreApi:   coreApi,
+		converter: &generated.OpenAPIConverterImpl{},
 	}
 }
 
@@ -121,11 +125,12 @@ func (s *ModelRegistryServiceAPIService) CreateModelArtifact(ctx context.Context
 // CreateModelVersion - Create a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersion(ctx context.Context, modelVersionCreate model.ModelVersionCreate) (ImplResponse, error) {
 	api := *s.coreApi
-	result, err := api.UpsertModelVersion(&model.ModelVersion{
-		CustomProperties: modelVersionCreate.CustomProperties,
-		ExternalID:       modelVersionCreate.ExternalID,
-		Name:             modelVersionCreate.Name,
-	}, &modelVersionCreate.RegisteredModelID)
+	modelVersion, err := s.converter.ConvertModelVersionCreate(&modelVersionCreate)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+
+	result, err := api.UpsertModelVersion(modelVersion, &modelVersionCreate.RegisteredModelID)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -150,11 +155,13 @@ func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.
 // CreateRegisteredModel - Create a RegisteredModel
 func (s *ModelRegistryServiceAPIService) CreateRegisteredModel(ctx context.Context, registeredModelCreate model.RegisteredModelCreate) (ImplResponse, error) {
 	api := *s.coreApi
-	result, err := api.UpsertRegisteredModel(&model.RegisteredModel{
-		CustomProperties: registeredModelCreate.CustomProperties,
-		ExternalID:       registeredModelCreate.ExternalID,
-		Name:             registeredModelCreate.Name,
-	})
+
+	registeredModel, err := s.converter.ConvertRegisteredModelCreate(&registeredModelCreate)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+
+	result, err := api.UpsertRegisteredModel(registeredModel)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
