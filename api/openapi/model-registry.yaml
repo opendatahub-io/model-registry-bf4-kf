@@ -1046,6 +1046,12 @@ components:
           $ref: '#/components/schemas/BaseArtifact'
         -
           $ref: '#/components/schemas/ModelArtifactCreate'
+        -
+          type: object
+          properties:
+            artifactType:
+              type: string
+              default: "model-artifact"
     RegisteredModel:
       description: A registered model in model registry. A registered model has ModelVersion children.
       allOf:

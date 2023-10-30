@@ -20,7 +20,7 @@ I create a child ModelVersion having
 
 I create a child ModelArtifact having
     [Arguments]  ${modelversionId}    ${uri}
-    ${data}=    Create Dictionary    uri=${uri}  artifactType=ModelArtifact
+    ${data}=    Create Dictionary    uri=${uri}  artifactType=model-artifact
     Log to console    ${data}
     ${resp}=    POST    url=http://localhost:8080/api/model_registry/v1alpha1/model_versions/${modelversionId}/artifacts    json=${data}    expected_status=201
     Log to console    ${resp.json()}
