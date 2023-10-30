@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/golang/glog"
 	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
@@ -83,9 +84,9 @@ func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *openapi
 	var existing *openapi.RegisteredModel
 
 	if registeredModel.Id == nil {
-		log.Printf("Creating new registered model")
+		glog.Info("Creating new registered model")
 	} else {
-		log.Printf("Updating registered model %s", *registeredModel.Id)
+		glog.Info("Updating registered model %s", *registeredModel.Id)
 		existing, err = serv.GetRegisteredModelById(*registeredModel.Id)
 		if err != nil {
 			return nil, err
@@ -125,7 +126,7 @@ func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *openapi
 }
 
 func (serv *modelRegistryService) GetRegisteredModelById(id string) (*openapi.RegisteredModel, error) {
-	log.Printf("Getting registered model %s", id)
+	glog.Info("Getting registered model %s", id)
 
 	idAsInt, err := mapper.IdToInt64(id)
 	if err != nil {
@@ -156,7 +157,7 @@ func (serv *modelRegistryService) GetRegisteredModelById(id string) (*openapi.Re
 }
 
 func (serv *modelRegistryService) getRegisteredModelByVersionId(id string) (*openapi.RegisteredModel, error) {
-	log.Printf("Getting registered model for model version %s", id)
+	glog.Info("Getting registered model for model version %s", id)
 
 	idAsInt, err := mapper.IdToInt64(id)
 	if err != nil {
@@ -187,7 +188,7 @@ func (serv *modelRegistryService) getRegisteredModelByVersionId(id string) (*ope
 }
 
 func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, externalId *string) (*openapi.RegisteredModel, error) {
-	log.Printf("Getting registered model by params name=%v, externalId=%v", name, externalId)
+	glog.Info("Getting registered model by params name=%v, externalId=%v", name, externalId)
 
 	filterQuery := ""
 	if name != nil {
@@ -259,7 +260,7 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 
 	if modelVersion.Id == nil {
 		// create
-		log.Printf("Creating new model version")
+		glog.Info("Creating new model version")
 		if parentResourceId == nil {
 			return nil, fmt.Errorf("missing registered model id, cannot create model version without registered model")
 		}
@@ -269,7 +270,7 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 		}
 	} else {
 		// update
-		log.Printf("Updating model version %s", *modelVersion.Id)
+		glog.Info("Updating model version %s", *modelVersion.Id)
 		existing, err = serv.GetModelVersionById(*modelVersion.Id)
 		if err != nil {
 			return nil, err
@@ -360,7 +361,7 @@ func (serv *modelRegistryService) GetModelVersionById(id string) (*openapi.Model
 }
 
 func (serv *modelRegistryService) getModelVersionByArtifactId(id string) (*openapi.ModelVersion, error) {
-	log.Printf("Getting model version for model artifact %s", id)
+	glog.Info("Getting model version for model artifact %s", id)
 
 	idAsInt, err := mapper.IdToInt64(id)
 	if err != nil {
@@ -470,7 +471,7 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 
 	if modelArtifact.Id == nil {
 		// create
-		log.Printf("Creating new model artifact")
+		glog.Info("Creating new model artifact")
 		if parentResourceId == nil {
 			return nil, fmt.Errorf("missing model version id, cannot create model artifact without model version")
 		}
@@ -480,7 +481,7 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 		}
 	} else {
 		// update
-		log.Printf("Updating model artifact %s", *modelArtifact.Id)
+		glog.Info("Updating model artifact %s", *modelArtifact.Id)
 		existing, err = serv.GetModelArtifactById(*modelArtifact.Id)
 		if err != nil {
 			return nil, err
