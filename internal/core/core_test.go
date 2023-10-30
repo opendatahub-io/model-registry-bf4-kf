@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/opendatahub-io/model-registry/internal/converter"
 	"github.com/opendatahub-io/model-registry/internal/core"
-	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/opendatahub-io/model-registry/internal/testutils"
@@ -183,14 +183,14 @@ func TestCreateRegisteredModel(t *testing.T) {
 	assertion.Nilf(err, "error creating registered model: %v", err)
 	assertion.NotNilf(createdModel.Id, "created registered model should not have nil Id")
 
-	createdModelId, _ := mapper.IdToInt64(*createdModel.Id)
+	createdModelId, _ := converter.StringToInt64(createdModel.Id)
 	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
 		ContextIds: []int64{*createdModelId},
 	})
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx := ctxById.Contexts[0]
-	ctxId := mapper.IdToString(*ctx.Id)
+	ctxId := converter.Int64ToString(ctx.Id)
 	assertion.Equal(*createdModel.Id, *ctxId, "returned model id should match the mlmd one")
 	assertion.Equal(modelName, *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(modelExternalId, *ctx.ExternalId, "saved external id should match the provided one")
@@ -227,7 +227,7 @@ func TestUpdateRegisteredModel(t *testing.T) {
 	// checks
 	assertion.Nilf(err, "error creating registered model: %v", err)
 	assertion.NotNilf(createdModel.Id, "created registered model should not have nil Id")
-	createdModelId, _ := mapper.IdToInt64(*createdModel.Id)
+	createdModelId, _ := converter.StringToInt64(createdModel.Id)
 
 	// checks created model matches original one except for Id
 	assertion.Equal(*registeredModel.Name, *createdModel.Name, "returned model name should match the original one")
@@ -260,7 +260,7 @@ func TestUpdateRegisteredModel(t *testing.T) {
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx := ctxById.Contexts[0]
-	ctxId := mapper.IdToString(*ctx.Id)
+	ctxId := converter.Int64ToString(ctx.Id)
 	assertion.Equal(*createdModel.Id, *ctxId, "returned model id should match the mlmd one")
 	assertion.Equal(modelName, *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(newModelExternalId, *ctx.ExternalId, "saved external id should match the provided one")
@@ -284,7 +284,7 @@ func TestUpdateRegisteredModel(t *testing.T) {
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx = ctxById.Contexts[0]
-	ctxId = mapper.IdToString(*ctx.Id)
+	ctxId = converter.Int64ToString(ctx.Id)
 	assertion.Equal(*createdModel.Id, *ctxId, "returned model id should match the mlmd one")
 	assertion.Equal(modelName, *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(newModelExternalId, *ctx.ExternalId, "saved external id should match the provided one")
@@ -590,7 +590,7 @@ func TestCreateModelVersion(t *testing.T) {
 
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
 
-	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
+	createdVersionId, _ := converter.StringToInt64(createdVersion.Id)
 
 	byId, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
 		ContextIds: []int64{
@@ -666,7 +666,7 @@ func TestUpdateModelVersion(t *testing.T) {
 	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
 
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
-	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
+	createdVersionId, _ := converter.StringToInt64(createdVersion.Id)
 
 	newExternalId := "org.my_awesome_model@v1"
 	newScore := 0.95
@@ -681,7 +681,7 @@ func TestUpdateModelVersion(t *testing.T) {
 	updatedVersion, err := service.UpsertModelVersion(createdVersion, &registeredModelId)
 	assertion.Nilf(err, "error updating new model version for %s: %v", registeredModelId, err)
 
-	updateVersionId, _ := mapper.IdToInt64(*updatedVersion.Id)
+	updateVersionId, _ := converter.StringToInt64(updatedVersion.Id)
 	assertion.Equal(*createdVersionId, *updateVersionId, "created and updated model version should have same id")
 
 	byId, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
@@ -711,7 +711,7 @@ func TestUpdateModelVersion(t *testing.T) {
 	updatedVersion, err = service.UpsertModelVersion(updatedVersion, &registeredModelId)
 	assertion.Nilf(err, "error updating new model version for %s: %v", registeredModelId, err)
 
-	updateVersionId, _ = mapper.IdToInt64(*updatedVersion.Id)
+	updateVersionId, _ = converter.StringToInt64(updatedVersion.Id)
 	assertion.Equal(*createdVersionId, *updateVersionId, "created and updated model version should have same id")
 
 	byId, err = client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
@@ -797,7 +797,7 @@ func TestGetModelVersionById(t *testing.T) {
 	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
 
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
-	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
+	createdVersionId, _ := converter.StringToInt64(createdVersion.Id)
 
 	getById, err := service.GetModelVersionById(*createdVersion.Id)
 	assertion.Nilf(err, "error getting model version with id %d", *createdVersionId)
@@ -810,7 +810,7 @@ func TestGetModelVersionById(t *testing.T) {
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx := ctxById.Contexts[0]
-	assertion.Equal(*getById.Id, *mapper.IdToString(*ctx.Id), "returned model version id should match the mlmd context one")
+	assertion.Equal(*getById.Id, *converter.Int64ToString(ctx.Id), "returned model version id should match the mlmd context one")
 	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getById.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*getById.ExternalID, *modelVersion.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(*(*getById.CustomProperties)["author"].MetadataStringValue.StringValue, author, "saved author custom property should match the provided one")
@@ -841,7 +841,7 @@ func TestGetModelVersionByParamsName(t *testing.T) {
 	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
 
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
-	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
+	createdVersionId, _ := converter.StringToInt64(createdVersion.Id)
 
 	getByName, err := service.GetModelVersionByParams(&modelVersionName, &registeredModelId, nil)
 	assertion.Nilf(err, "error getting model version by name %d", *createdVersionId)
@@ -854,7 +854,7 @@ func TestGetModelVersionByParamsName(t *testing.T) {
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx := ctxById.Contexts[0]
-	assertion.Equal(*mapper.IdToString(*ctx.Id), *getByName.Id, "returned model version id should match the mlmd context one")
+	assertion.Equal(*converter.Int64ToString(ctx.Id), *getByName.Id, "returned model version id should match the mlmd context one")
 	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getByName.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*ctx.ExternalId, *getByName.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByName.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
@@ -885,7 +885,7 @@ func TestGetModelVersionByParamsExternalId(t *testing.T) {
 	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
 
 	assertion.NotNilf(createdVersion.Id, "created model version should not have nil Id")
-	createdVersionId, _ := mapper.IdToInt64(*createdVersion.Id)
+	createdVersionId, _ := converter.StringToInt64(createdVersion.Id)
 
 	getByExternalId, err := service.GetModelVersionByParams(nil, nil, modelVersion.ExternalID)
 	assertion.Nilf(err, "error getting model version by external id %d", *modelVersion.ExternalID)
@@ -898,7 +898,7 @@ func TestGetModelVersionByParamsExternalId(t *testing.T) {
 	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
 
 	ctx := ctxById.Contexts[0]
-	assertion.Equal(*mapper.IdToString(*ctx.Id), *getByExternalId.Id, "returned model version id should match the mlmd context one")
+	assertion.Equal(*converter.Int64ToString(ctx.Id), *getByExternalId.Id, "returned model version id should match the mlmd context one")
 	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, *getByExternalId.Name), *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(*ctx.ExternalId, *getByExternalId.ExternalID, "saved external id should match the provided one")
 	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByExternalId.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
@@ -985,9 +985,9 @@ func TestGetModelVersions(t *testing.T) {
 	_, err = service.UpsertModelVersion(modelVersionAnother, &anotherRegisteredModelId)
 	assertion.Nilf(err, "error creating new model version for %d", anotherRegisteredModelId)
 
-	createdVersionId1, _ := mapper.IdToInt64(*createdVersion1.Id)
-	createdVersionId2, _ := mapper.IdToInt64(*createdVersion2.Id)
-	createdVersionId3, _ := mapper.IdToInt64(*createdVersion3.Id)
+	createdVersionId1, _ := converter.StringToInt64(createdVersion1.Id)
+	createdVersionId2, _ := converter.StringToInt64(createdVersion2.Id)
+	createdVersionId3, _ := converter.StringToInt64(createdVersion3.Id)
 
 	getAll, err := service.GetModelVersions(core.ListOptions{}, nil)
 	assertion.Nilf(err, "error getting all model versions")
@@ -997,9 +997,9 @@ func TestGetModelVersions(t *testing.T) {
 	assertion.Nilf(err, "error getting all model versions")
 	assertion.Equalf(int32(3), getAllByRegModel.Size, "expected three model versions for registered model %d", registeredModelId)
 
-	assertion.Equal(*mapper.IdToString(*createdVersionId1), *getAllByRegModel.Items[0].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId2), *getAllByRegModel.Items[1].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId3), *getAllByRegModel.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId1), *getAllByRegModel.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId2), *getAllByRegModel.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId3), *getAllByRegModel.Items[2].Id)
 
 	// order by last update time, expecting last created as first
 	orderByLastUpdate := "LAST_UPDATE_TIME"
@@ -1010,9 +1010,9 @@ func TestGetModelVersions(t *testing.T) {
 	assertion.Nilf(err, "error getting all model versions")
 	assertion.Equalf(int32(3), getAllByRegModel.Size, "expected three model versions for registered model %d", registeredModelId)
 
-	assertion.Equal(*mapper.IdToString(*createdVersionId1), *getAllByRegModel.Items[2].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId2), *getAllByRegModel.Items[1].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId3), *getAllByRegModel.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId1), *getAllByRegModel.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId2), *getAllByRegModel.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId3), *getAllByRegModel.Items[0].Id)
 
 	// update the second version
 	newVersionExternalId := "updated.org:v2"
@@ -1029,9 +1029,9 @@ func TestGetModelVersions(t *testing.T) {
 	assertion.Nilf(err, "error getting all model versions")
 	assertion.Equalf(int32(3), getAllByRegModel.Size, "expected three model versions for registered model %d", registeredModelId)
 
-	assertion.Equal(*mapper.IdToString(*createdVersionId1), *getAllByRegModel.Items[2].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId2), *getAllByRegModel.Items[0].Id)
-	assertion.Equal(*mapper.IdToString(*createdVersionId3), *getAllByRegModel.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId1), *getAllByRegModel.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId2), *getAllByRegModel.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdVersionId3), *getAllByRegModel.Items[1].Id)
 }
 
 // MODEL ARTIFACTS
@@ -1068,7 +1068,7 @@ func TestCreateModelArtifact(t *testing.T) {
 	assertion.Equal(artifactUri, *createdArtifact.Uri)
 	assertion.Equal(author, *(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue)
 
-	createdArtifactId, _ := mapper.IdToInt64(*createdArtifact.Id)
+	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
 	getById, err := client.GetArtifactsByID(context.Background(), &proto.GetArtifactsByIDRequest{
 		ArtifactIds: []int64{*createdArtifactId},
 	})
@@ -1080,7 +1080,7 @@ func TestCreateModelArtifact(t *testing.T) {
 	assertion.Equal(*createdArtifact.Uri, *getById.Artifacts[0].Uri)
 	assertion.Equal(*(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Artifacts[0].CustomProperties["author"].GetStringValue())
 
-	modelVersionIdAsInt, _ := mapper.IdToInt64(modelVersionId)
+	modelVersionIdAsInt, _ := converter.StringToInt64(&modelVersionId)
 	byCtx, _ := client.GetArtifactsByContext(context.Background(), &proto.GetArtifactsByContextRequest{
 		ContextId: (*int64)(modelVersionIdAsInt),
 	})
@@ -1149,8 +1149,8 @@ func TestUpdateModelArtifact(t *testing.T) {
 	updatedArtifact, err := service.UpsertModelArtifact(createdArtifact, &modelVersionId)
 	assertion.Nilf(err, "error updating model artifact for %d: %v", modelVersionId, err)
 
-	createdArtifactId, _ := mapper.IdToInt64(*createdArtifact.Id)
-	updatedArtifactId, _ := mapper.IdToInt64(*updatedArtifact.Id)
+	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
+	updatedArtifactId, _ := converter.StringToInt64(updatedArtifact.Id)
 	assertion.Equal(createdArtifactId, updatedArtifactId)
 
 	getById, err := client.GetArtifactsByID(context.Background(), &proto.GetArtifactsByIDRequest{
@@ -1228,7 +1228,7 @@ func TestGetModelArtifactById(t *testing.T) {
 	createdArtifact, err := service.UpsertModelArtifact(modelArtifact, &modelVersionId)
 	assertion.Nilf(err, "error creating new model artifact for %d", modelVersionId)
 
-	createdArtifactId, _ := mapper.IdToInt64(*createdArtifact.Id)
+	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
 
 	getById, err := service.GetModelArtifactById(*createdArtifact.Id)
 	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
@@ -1269,7 +1269,7 @@ func TestGetModelArtifactByParams(t *testing.T) {
 	createdArtifact, err := service.UpsertModelArtifact(modelArtifact, &modelVersionId)
 	assertion.Nilf(err, "error creating new model artifact for %d", modelVersionId)
 
-	createdArtifactId, _ := mapper.IdToInt64(*createdArtifact.Id)
+	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
 
 	state, _ := openapi.NewArtifactStateFromValue(artifactState)
 
@@ -1393,17 +1393,17 @@ func TestGetModelArtifacts(t *testing.T) {
 	createdArtifact3, err := service.UpsertModelArtifact(modelArtifact3, &modelVersionId)
 	assertion.Nilf(err, "error creating new model artifact for %d", modelVersionId)
 
-	createdArtifactId1, _ := mapper.IdToInt64(*createdArtifact1.Id)
-	createdArtifactId2, _ := mapper.IdToInt64(*createdArtifact2.Id)
-	createdArtifactId3, _ := mapper.IdToInt64(*createdArtifact3.Id)
+	createdArtifactId1, _ := converter.StringToInt64(createdArtifact1.Id)
+	createdArtifactId2, _ := converter.StringToInt64(createdArtifact2.Id)
+	createdArtifactId3, _ := converter.StringToInt64(createdArtifact3.Id)
 
 	getAll, err := service.GetModelArtifacts(core.ListOptions{}, nil)
 	assertion.Nilf(err, "error getting all model artifacts")
 	assertion.Equalf(int32(3), getAll.Size, "expected three model artifacts")
 
-	assertion.Equal(*mapper.IdToString(*createdArtifactId1), *getAll.Items[0].Id)
-	assertion.Equal(*mapper.IdToString(*createdArtifactId2), *getAll.Items[1].Id)
-	assertion.Equal(*mapper.IdToString(*createdArtifactId3), *getAll.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId1), *getAll.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId2), *getAll.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId3), *getAll.Items[2].Id)
 
 	orderByLastUpdate := "LAST_UPDATE_TIME"
 	getAllByModelVersion, err := service.GetModelArtifacts(core.ListOptions{
@@ -1413,7 +1413,7 @@ func TestGetModelArtifacts(t *testing.T) {
 	assertion.Nilf(err, "error getting all model artifacts for %d", modelVersionId)
 	assertion.Equalf(int32(3), getAllByModelVersion.Size, "expected three model artifacts for model version %d", modelVersionId)
 
-	assertion.Equal(*mapper.IdToString(*createdArtifactId1), *getAllByModelVersion.Items[2].Id)
-	assertion.Equal(*mapper.IdToString(*createdArtifactId2), *getAllByModelVersion.Items[1].Id)
-	assertion.Equal(*mapper.IdToString(*createdArtifactId3), *getAllByModelVersion.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId1), *getAllByModelVersion.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId2), *getAllByModelVersion.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdArtifactId3), *getAllByModelVersion.Items[0].Id)
 }

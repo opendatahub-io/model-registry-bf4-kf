@@ -1,11 +1,10 @@
-package mapper_test
+package converter
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	"testing"
 
-	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -35,8 +34,8 @@ func TestMetadataValueIntFailure(t *testing.T) {
 	mdValue := "not a number"
 	data[key] = openapi.MetadataIntValueAsMetadataValue(&openapi.MetadataIntValue{IntValue: &mdValue})
 
-	mapper, assert := setup(t)
-	asGRPC, err := mapper.MapToProperties(data)
+	assert := setup(t)
+	asGRPC, err := MapOpenAPICustomProperties(&data)
 	if err == nil {
 		assert.Fail("Did not expected a converted value but an error: %v", asGRPC)
 	}
@@ -95,31 +94,31 @@ func TestMetadataValueProtoUnsupported(t *testing.T) {
 		ProtoValue: &b64,
 	})
 
-	mapper, assert := setup(t)
-	asGRPC, err := mapper.MapToProperties(data)
+	assert := setup(t)
+	asGRPC, err := MapOpenAPICustomProperties(&data)
 	if err == nil {
 		assert.Fail("Did not expected a converted value but an error: %v", asGRPC)
 	}
 }
 
 func roundTripAndAssert(t *testing.T, data map[string]openapi.MetadataValue, key string) {
-	mapper, assert := setup(t)
+	assert := setup(t)
 
 	// first half
-	asGRPC, err := mapper.MapToProperties(data)
+	asGRPC, err := MapOpenAPICustomProperties(&data)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Contains(maps.Keys(asGRPC), key)
 
 	// second half
-	unmarshall, err := mapper.MapFromProperties(asGRPC)
+	unmarshall, err := MapMLMDCustomProperties(asGRPC)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(data, unmarshall, "result of round-trip shall be equal to original data")
 }
 
-func setup(t *testing.T) (*mapper.Mapper, *assert.Assertions) {
-	return mapper.NewMapper(1, 2, 3), assert.New(t)
+func setup(t *testing.T) *assert.Assertions {
+	return assert.New(t)
 }
