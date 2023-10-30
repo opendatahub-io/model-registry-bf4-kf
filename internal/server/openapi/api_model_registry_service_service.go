@@ -243,7 +243,7 @@ func (s *ModelRegistryServiceAPIService) FindInferenceService(ctx context.Contex
 }
 
 // FindModelArtifact - Get a ModelArtifact that matches search parameters.
-func (s *ModelRegistryServiceAPIService) FindModelArtifact(ctx context.Context, name string, externalID string) (ImplResponse, error) {
+func (s *ModelRegistryServiceAPIService) FindModelArtifact(ctx context.Context, name string, externalID string, parentResourceID string) (ImplResponse, error) {
 	// TODO - update FindModelArtifact with the required logic for this service method.
 	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 
