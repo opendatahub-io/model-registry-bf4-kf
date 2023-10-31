@@ -94,12 +94,10 @@ func (serv *modelRegistryService) UpsertRegisteredModel(registeredModel *openapi
 	}
 
 	// if already existing assure the name is the same
-	if existing != nil {
-		if registeredModel.Name == nil {
-			// user did not provide it
-			// need to set it to avoid mlmd error "context name should not be empty"
-			registeredModel.Name = existing.Name
-		}
+	if existing != nil && registeredModel.Name == nil {
+		// user did not provide it
+		// need to set it to avoid mlmd error "context name should not be empty"
+		registeredModel.Name = existing.Name
 	}
 
 	modelCtx, err := serv.mapper.MapFromRegisteredModel(registeredModel)
@@ -287,12 +285,10 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 	}
 
 	// if already existing assure the name is the same
-	if existing != nil {
-		if modelVersion.Name == nil {
-			// user did not provide it
-			// need to set it to avoid mlmd error "context name should not be empty"
-			modelVersion.Name = existing.Name
-		}
+	if existing != nil && modelVersion.Name == nil {
+		// user did not provide it
+		// need to set it to avoid mlmd error "context name should not be empty"
+		modelVersion.Name = existing.Name
 	}
 
 	modelCtx, err := serv.mapper.MapFromModelVersion(modelVersion, *registeredModelId, registeredModel.Name)
