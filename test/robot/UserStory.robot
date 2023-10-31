@@ -1,5 +1,10 @@
 *** Settings ***
-Resource   UserStory.resource
+Resource   MRviaREST.resource
+
+
+*** Comments ***
+These User Story(-ies) are defined in the PM document
+
 
 *** Test Cases ***              
 As a MLOps engineer I would like to store Model name
