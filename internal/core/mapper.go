@@ -1,9 +1,8 @@
-package mapper
+package core
 
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/opendatahub-io/model-registry/internal/converter"
 	"github.com/opendatahub-io/model-registry/internal/converter/generated"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
@@ -11,8 +10,8 @@ import (
 )
 
 type Mapper struct {
-	toMLMDConverter       converter.OpenAPIToMLMDConverter
-	toOpenAPIConverter    converter.MLMDToOpenAPIConverter
+	OpenAPIConverter      converter.OpenAPIToMLMDConverter
+	MLMDConverter         converter.MLMDToOpenAPIConverter
 	RegisteredModelTypeId int64
 	ModelVersionTypeId    int64
 	ModelArtifactTypeId   int64
@@ -20,81 +19,79 @@ type Mapper struct {
 
 func NewMapper(registeredModelTypeId int64, modelVersionTypeId int64, modelArtifactTypeId int64) *Mapper {
 	return &Mapper{
-		toMLMDConverter:       &generated.OpenAPIToMLMDConverterImpl{},
-		toOpenAPIConverter:    &generated.MLMDToOpenAPIConverterImpl{},
+		OpenAPIConverter:      &generated.OpenAPIToMLMDConverterImpl{},
+		MLMDConverter:         &generated.MLMDToOpenAPIConverterImpl{},
 		RegisteredModelTypeId: registeredModelTypeId,
 		ModelVersionTypeId:    modelVersionTypeId,
 		ModelArtifactTypeId:   modelArtifactTypeId,
 	}
 }
 
-// Internal Model --> MLMD
+// Utilities for OpenAPI --> MLMD mapping, make use of generated Converters
 
 func (m *Mapper) MapFromRegisteredModel(registeredModel *openapi.RegisteredModel) (*proto.Context, error) {
-	ctx, err := m.toMLMDConverter.ConvertRegisteredModel(registeredModel)
+	ctx, err := m.OpenAPIConverter.ConvertRegisteredModel(&converter.OpenAPIModelWrapper[openapi.RegisteredModel]{
+		TypeId: m.RegisteredModelTypeId,
+		Model:  registeredModel,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	ctx.TypeId = &m.RegisteredModelTypeId
 	return ctx, nil
 }
 
-func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registeredModelId int64, registeredModelName *string) (*proto.Context, error) {
-	fullName := converter.PrefixWhenOwned(&registeredModelId, *modelVersion.Name)
-
-	ctx, err := m.toMLMDConverter.ConvertModelVersion(modelVersion)
+func (m *Mapper) MapFromModelVersion(modelVersion *openapi.ModelVersion, registeredModelId string, registeredModelName *string) (*proto.Context, error) {
+	ctx, err := m.OpenAPIConverter.ConvertModelVersion(&converter.OpenAPIModelWrapper[openapi.ModelVersion]{
+		TypeId:           m.ModelVersionTypeId,
+		Model:            modelVersion,
+		ParentResourceId: &registeredModelId,
+		ModelName:        registeredModelName,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	ctx.TypeId = &m.ModelVersionTypeId
-	ctx.Name = &fullName
-
 	return ctx, nil
 }
 
-func (m *Mapper) MapFromModelArtifact(modelArtifact openapi.ModelArtifact, modelVersionId *int64) *proto.Artifact {
-	// openapi.Artifact is defined with optional name, so build arbitrary name for this artifact if missing
-	var artifactName string
-	if modelArtifact.Name != nil {
-		artifactName = *modelArtifact.Name
-	} else {
-		artifactName = uuid.New().String()
-	}
-	// build fullName for mlmd storage
-	fullName := converter.PrefixWhenOwned(modelVersionId, artifactName)
+func (m *Mapper) MapFromModelArtifact(modelArtifact *openapi.ModelArtifact, modelVersionId *string) (*proto.Artifact, error) {
 
-	artifact, err := m.toMLMDConverter.ConvertModelArtifact(&modelArtifact)
+	artifact, err := m.OpenAPIConverter.ConvertModelArtifact(&converter.OpenAPIModelWrapper[openapi.ModelArtifact]{
+		TypeId:           m.ModelArtifactTypeId,
+		Model:            modelArtifact,
+		ParentResourceId: modelVersionId,
+	})
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	artifact.TypeId = &m.ModelArtifactTypeId
-	artifact.Name = &fullName
-
-	return artifact
+	return artifact, nil
 }
 
-func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]openapi.ModelArtifact, modelVersionId *int64) ([]*proto.Artifact, error) {
+func (m *Mapper) MapFromModelArtifacts(modelArtifacts *[]openapi.ModelArtifact, modelVersionId *string) ([]*proto.Artifact, error) {
 	artifacts := []*proto.Artifact{}
 	if modelArtifacts == nil {
 		return artifacts, nil
 	}
 	for _, a := range *modelArtifacts {
-		artifacts = append(artifacts, m.MapFromModelArtifact(a, modelVersionId))
+		mapped, err := m.MapFromModelArtifact(&a, modelVersionId)
+		if err != nil {
+			return nil, err
+		}
+		artifacts = append(artifacts, mapped)
 	}
 	return artifacts, nil
 }
 
-//  MLMD --> Internal Model
+// Utilities for MLMD --> OpenAPI mapping, make use of generated Converters
 
 func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredModel, error) {
 	if ctx.GetTypeId() != m.RegisteredModelTypeId {
 		return nil, fmt.Errorf("invalid TypeId, expected %d but received %d", m.RegisteredModelTypeId, ctx.GetTypeId())
 	}
 
-	return m.toOpenAPIConverter.ConvertRegisteredModel(ctx)
+	return m.MLMDConverter.ConvertRegisteredModel(ctx)
 }
 
 func (m *Mapper) MapToModelVersion(ctx *proto.Context) (*openapi.ModelVersion, error) {
@@ -102,7 +99,7 @@ func (m *Mapper) MapToModelVersion(ctx *proto.Context) (*openapi.ModelVersion, e
 		return nil, fmt.Errorf("invalid TypeId, expected %d but received %d", m.ModelVersionTypeId, ctx.GetTypeId())
 	}
 
-	return m.toOpenAPIConverter.ConvertModelVersion(ctx)
+	return m.MLMDConverter.ConvertModelVersion(ctx)
 }
 
 func (m *Mapper) MapToModelArtifact(artifact *proto.Artifact) (*openapi.ModelArtifact, error) {
@@ -110,5 +107,5 @@ func (m *Mapper) MapToModelArtifact(artifact *proto.Artifact) (*openapi.ModelArt
 		return nil, fmt.Errorf("invalid TypeId, expected %d but received %d", m.ModelArtifactTypeId, artifact.GetTypeId())
 	}
 
-	return m.toOpenAPIConverter.ConvertModelArtifact(artifact)
+	return m.MLMDConverter.ConvertModelArtifact(artifact)
 }

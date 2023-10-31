@@ -100,12 +100,13 @@ func MapOpenAPICustomProperties(source *map[string]openapi.MetadataValue) (map[s
 // PrefixWhenOwned compose the mlmd fullname by using ownerId as prefix
 // For owned entity such as ModelVersion
 // for potentially owned entity such as ModelArtifact
-func PrefixWhenOwned(ownerId *int64, entityName string) string {
+func PrefixWhenOwned(ownerId *string, entityName string) string {
+	prefix := uuid.New().String()
 	if ownerId != nil {
-		return fmt.Sprintf("%d:%s", *ownerId, entityName)
+		prefix = *ownerId
 	}
-	uuidPrefix := uuid.New().String()
-	return fmt.Sprintf("%s:%s", uuidPrefix, entityName)
+	prefixedName := fmt.Sprintf("%s:%s", prefix, entityName)
+	return prefixedName
 }
 
 // REGISTERED MODEL
@@ -125,18 +126,19 @@ func MapRegisteredModelType(_ *openapi.RegisteredModel) *string {
 // MODEL VERSION
 
 // MapModelVersionProperties maps ModelVersion fields to specific MLMD properties
-func MapModelVersionProperties(source *openapi.ModelVersion) (map[string]*proto.Value, error) {
+func MapModelVersionProperties(source *OpenAPIModelWrapper[openapi.ModelVersion]) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 	if source != nil {
-		// TODO: model_name is known only from the RegisteredModel, not available here
-		props["model_name"] = &proto.Value{
-			Value: &proto.Value_StringValue{
-				StringValue: "",
-			},
+		if (*source).ModelName != nil {
+			props["model_name"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *(*source).ModelName,
+				},
+			}
 		}
 		props["version"] = &proto.Value{
 			Value: &proto.Value_StringValue{
-				StringValue: *source.Name,
+				StringValue: *(*source.Model).Name,
 			},
 		}
 		// TODO: not available for now
@@ -152,6 +154,12 @@ func MapModelVersionProperties(source *openapi.ModelVersion) (map[string]*proto.
 // MapModelVersionType returnd ModelVersion corresponding MLMD context type
 func MapModelVersionType(_ *openapi.ModelVersion) *string {
 	return Of(ModelVersionTypeName)
+}
+
+// MapModelVersionName maps the user-provided name into MLMD one, i.e., prefixing it with
+// either the parent resource id or a generated uuid
+func MapModelVersionName(source *OpenAPIModelWrapper[openapi.ModelVersion]) *string {
+	return Of(PrefixWhenOwned(source.ParentResourceId, *(*source).Model.Name))
 }
 
 // MODEL ARTIFACT
@@ -174,6 +182,20 @@ func MapModelArtifactProperties(source *openapi.ModelArtifact) (map[string]*prot
 // MapModelArtifactType returnd ModelArtifact corresponding MLMD context type
 func MapModelArtifactType(_ *openapi.ModelArtifact) *string {
 	return Of(ModelArtifactTypeName)
+}
+
+// MapModelArtifactName maps the user-provided name into MLMD one, i.e., prefixing it with
+// either the parent resource id or a generated uuid. If not provided, autogenerate the name
+// itself
+func MapModelArtifactName(source *OpenAPIModelWrapper[openapi.ModelArtifact]) *string {
+	// openapi.Artifact is defined with optional name, so build arbitrary name for this artifact if missing
+	var artifactName string
+	if (*source).Model.Name != nil {
+		artifactName = *(*source).Model.Name
+	} else {
+		artifactName = uuid.New().String()
+	}
+	return Of(PrefixWhenOwned(source.ParentResourceId, artifactName))
 }
 
 func MapOpenAPIModelArtifactState(source *openapi.ArtifactState) *proto.Artifact_State {

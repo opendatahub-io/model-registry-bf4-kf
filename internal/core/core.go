@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/opendatahub-io/model-registry/internal/converter"
-	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"google.golang.org/grpc"
@@ -22,7 +21,7 @@ var (
 // modelRegistryService is the core library of the model registry
 type modelRegistryService struct {
 	mlmdClient proto.MetadataStoreServiceClient
-	mapper     *mapper.Mapper
+	mapper     *Mapper
 }
 
 // NewModelRegistryService create a fresh instance of ModelRegistryService, taking care of setting up needed MLMD Types
@@ -74,7 +73,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	return &modelRegistryService{
 		mlmdClient: client,
-		mapper:     mapper.NewMapper(registeredModelResp.GetTypeId(), modelVersionResp.GetTypeId(), modelArtifactResp.GetTypeId()),
+		mapper:     NewMapper(registeredModelResp.GetTypeId(), modelVersionResp.GetTypeId(), modelArtifactResp.GetTypeId()),
 	}, nil
 }
 
@@ -280,11 +279,6 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 		}
 	}
 
-	registeredModelId, err := converter.StringToInt64(registeredModel.Id)
-	if err != nil {
-		return nil, err
-	}
-
 	// if already existing assure the name is the same
 	if existing != nil && modelVersion.Name == nil {
 		// user did not provide it
@@ -292,7 +286,7 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 		modelVersion.Name = existing.Name
 	}
 
-	modelCtx, err := serv.mapper.MapFromModelVersion(modelVersion, *registeredModelId, registeredModel.Name)
+	modelCtx, err := serv.mapper.MapFromModelVersion(modelVersion, *registeredModel.Id, registeredModel.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -308,6 +302,11 @@ func (serv *modelRegistryService) UpsertModelVersion(modelVersion *openapi.Model
 
 	modelId := &modelCtxResp.ContextIds[0]
 	if modelVersion.Id == nil {
+		registeredModelId, err := converter.StringToInt64(registeredModel.Id)
+		if err != nil {
+			return nil, err
+		}
+
 		_, err = serv.mlmdClient.PutParentContexts(context.Background(), &proto.PutParentContextsRequest{
 			ParentContexts: []*proto.ParentContext{{
 				ChildId:  modelId,
@@ -391,11 +390,7 @@ func (serv *modelRegistryService) getModelVersionByArtifactId(id string) (*opena
 func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, parentResourceId *string, externalId *string) (*openapi.ModelVersion, error) {
 	filterQuery := ""
 	if versionName != nil && parentResourceId != nil {
-		idAsInt, err := converter.StringToInt64(parentResourceId)
-		if err != nil {
-			return nil, err
-		}
-		filterQuery = fmt.Sprintf("name = \"%s\"", converter.PrefixWhenOwned(idAsInt, *versionName))
+		filterQuery = fmt.Sprintf("name = \"%s\"", converter.PrefixWhenOwned(parentResourceId, *versionName))
 	} else if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
 	} else {
@@ -489,11 +484,6 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 		}
 	}
 
-	modelVersionId, err := converter.StringToInt64(parentResourceId)
-	if err != nil {
-		return nil, err
-	}
-
 	// if already existing assure the name is the same
 	if existing != nil {
 		if modelArtifact.Name == nil {
@@ -503,7 +493,10 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 		}
 	}
 
-	artifact := serv.mapper.MapFromModelArtifact(*modelArtifact, modelVersionId)
+	artifact, err := serv.mapper.MapFromModelArtifact(modelArtifact, parentResourceId)
+	if err != nil {
+		return nil, err
+	}
 
 	artifactsResp, err := serv.mlmdClient.PutArtifacts(context.Background(), &proto.PutArtifactsRequest{
 		Artifacts: []*proto.Artifact{artifact},
@@ -514,6 +507,10 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 
 	// add explicit association between artifacts and model version
 	if parentResourceId != nil && modelArtifact.Id == nil {
+		modelVersionId, err := converter.StringToInt64(parentResourceId)
+		if err != nil {
+			return nil, err
+		}
 		attributions := []*proto.Attribution{}
 		for _, a := range artifactsResp.ArtifactIds {
 			attributions = append(attributions, &proto.Attribution{
@@ -574,11 +571,7 @@ func (serv *modelRegistryService) GetModelArtifactByParams(artifactName *string,
 	if externalId != nil {
 		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
 	} else if artifactName != nil && parentResourceId != nil {
-		idAsInt, err := converter.StringToInt64(parentResourceId)
-		if err != nil {
-			return nil, err
-		}
-		filterQuery = fmt.Sprintf("name = \"%s\"", converter.PrefixWhenOwned(idAsInt, *artifactName))
+		filterQuery = fmt.Sprintf("name = \"%s\"", converter.PrefixWhenOwned(parentResourceId, *artifactName))
 	} else {
 		return nil, fmt.Errorf("invalid parameters call, supply either (artifactName and parentResourceId), or externalId")
 	}

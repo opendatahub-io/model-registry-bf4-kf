@@ -11,75 +11,103 @@ import (
 
 type OpenAPIToMLMDConverterImpl struct{}
 
-func (c *OpenAPIToMLMDConverterImpl) ConvertModelArtifact(source *openapi.ModelArtifact) (*proto.Artifact, error) {
+func (c *OpenAPIToMLMDConverterImpl) ConvertModelArtifact(source *converter.OpenAPIModelWrapper[openapi.ModelArtifact]) (*proto.Artifact, error) {
 	var pProtoArtifact *proto.Artifact
 	if source != nil {
 		var protoArtifact proto.Artifact
-		pInt64, err := converter.StringToInt64((*source).Id)
+		var pString *string
+		if (*source).Model != nil {
+			pString = (*source).Model.Id
+		}
+		pInt64, err := converter.StringToInt64(pString)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Id: %w", err)
 		}
 		protoArtifact.Id = pInt64
-		var pString *string
-		if (*source).Name != nil {
-			xstring := *(*source).Name
-			pString = &xstring
-		}
-		protoArtifact.Name = pString
+		protoArtifact.Name = converter.MapModelArtifactName(source)
+		pInt642 := (*source).TypeId
+		protoArtifact.TypeId = &pInt642
+		protoArtifact.Type = converter.MapModelArtifactType((*source).Model)
 		var pString2 *string
-		if (*source).Uri != nil {
-			xstring2 := *(*source).Uri
-			pString2 = &xstring2
+		if (*source).Model != nil {
+			pString2 = (*source).Model.Uri
 		}
-		protoArtifact.Uri = pString2
 		var pString3 *string
-		if (*source).ExternalID != nil {
-			xstring3 := *(*source).ExternalID
-			pString3 = &xstring3
+		if pString2 != nil {
+			xstring := *pString2
+			pString3 = &xstring
 		}
-		protoArtifact.ExternalId = pString3
-		mapStringPProtoValue, err := converter.MapModelArtifactProperties(source)
+		protoArtifact.Uri = pString3
+		var pString4 *string
+		if (*source).Model != nil {
+			pString4 = (*source).Model.ExternalID
+		}
+		var pString5 *string
+		if pString4 != nil {
+			xstring2 := *pString4
+			pString5 = &xstring2
+		}
+		protoArtifact.ExternalId = pString5
+		mapStringPProtoValue, err := converter.MapModelArtifactProperties((*source).Model)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Properties: %w", err)
 		}
 		protoArtifact.Properties = mapStringPProtoValue
-		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties((*source).CustomProperties)
+		var pMapStringOpenapiMetadataValue *map[string]openapi.MetadataValue
+		if (*source).Model != nil {
+			pMapStringOpenapiMetadataValue = (*source).Model.CustomProperties
+		}
+		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties(pMapStringOpenapiMetadataValue)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field CustomProperties: %w", err)
 		}
 		protoArtifact.CustomProperties = mapStringPProtoValue2
-		protoArtifact.State = converter.MapOpenAPIModelArtifactState((*source).State)
+		var pOpenapiArtifactState *openapi.ArtifactState
+		if (*source).Model != nil {
+			pOpenapiArtifactState = (*source).Model.State
+		}
+		protoArtifact.State = converter.MapOpenAPIModelArtifactState(pOpenapiArtifactState)
 		pProtoArtifact = &protoArtifact
 	}
 	return pProtoArtifact, nil
 }
-func (c *OpenAPIToMLMDConverterImpl) ConvertModelVersion(source *openapi.ModelVersion) (*proto.Context, error) {
+func (c *OpenAPIToMLMDConverterImpl) ConvertModelVersion(source *converter.OpenAPIModelWrapper[openapi.ModelVersion]) (*proto.Context, error) {
 	var pProtoContext *proto.Context
 	if source != nil {
 		var protoContext proto.Context
-		pInt64, err := converter.StringToInt64((*source).Id)
+		var pString *string
+		if (*source).Model != nil {
+			pString = (*source).Model.Id
+		}
+		pInt64, err := converter.StringToInt64(pString)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Id: %w", err)
 		}
 		protoContext.Id = pInt64
-		var pString *string
-		if (*source).Name != nil {
-			xstring := *(*source).Name
-			pString = &xstring
-		}
-		protoContext.Name = pString
+		protoContext.Name = converter.MapModelVersionName(source)
+		pInt642 := (*source).TypeId
+		protoContext.TypeId = &pInt642
+		protoContext.Type = converter.MapModelVersionType((*source).Model)
 		var pString2 *string
-		if (*source).ExternalID != nil {
-			xstring2 := *(*source).ExternalID
-			pString2 = &xstring2
+		if (*source).Model != nil {
+			pString2 = (*source).Model.ExternalID
 		}
-		protoContext.ExternalId = pString2
+		var pString3 *string
+		if pString2 != nil {
+			xstring := *pString2
+			pString3 = &xstring
+		}
+		protoContext.ExternalId = pString3
 		mapStringPProtoValue, err := converter.MapModelVersionProperties(source)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Properties: %w", err)
 		}
 		protoContext.Properties = mapStringPProtoValue
-		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties((*source).CustomProperties)
+		var pMapStringOpenapiMetadataValue *map[string]openapi.MetadataValue
+		if (*source).Model != nil {
+			pMapStringOpenapiMetadataValue = (*source).Model.CustomProperties
+		}
+		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties(pMapStringOpenapiMetadataValue)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field CustomProperties: %w", err)
 		}
@@ -88,33 +116,52 @@ func (c *OpenAPIToMLMDConverterImpl) ConvertModelVersion(source *openapi.ModelVe
 	}
 	return pProtoContext, nil
 }
-func (c *OpenAPIToMLMDConverterImpl) ConvertRegisteredModel(source *openapi.RegisteredModel) (*proto.Context, error) {
+func (c *OpenAPIToMLMDConverterImpl) ConvertRegisteredModel(source *converter.OpenAPIModelWrapper[openapi.RegisteredModel]) (*proto.Context, error) {
 	var pProtoContext *proto.Context
 	if source != nil {
 		var protoContext proto.Context
-		pInt64, err := converter.StringToInt64((*source).Id)
+		var pString *string
+		if (*source).Model != nil {
+			pString = (*source).Model.Id
+		}
+		pInt64, err := converter.StringToInt64(pString)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Id: %w", err)
 		}
 		protoContext.Id = pInt64
-		var pString *string
-		if (*source).Name != nil {
-			xstring := *(*source).Name
-			pString = &xstring
-		}
-		protoContext.Name = pString
 		var pString2 *string
-		if (*source).ExternalID != nil {
-			xstring2 := *(*source).ExternalID
-			pString2 = &xstring2
+		if (*source).Model != nil {
+			pString2 = (*source).Model.Name
 		}
-		protoContext.ExternalId = pString2
-		mapStringPProtoValue, err := converter.MapRegisteredModelProperties(source)
+		var pString3 *string
+		if pString2 != nil {
+			xstring := *pString2
+			pString3 = &xstring
+		}
+		protoContext.Name = pString3
+		pInt642 := (*source).TypeId
+		protoContext.TypeId = &pInt642
+		protoContext.Type = converter.MapRegisteredModelType((*source).Model)
+		var pString4 *string
+		if (*source).Model != nil {
+			pString4 = (*source).Model.ExternalID
+		}
+		var pString5 *string
+		if pString4 != nil {
+			xstring2 := *pString4
+			pString5 = &xstring2
+		}
+		protoContext.ExternalId = pString5
+		mapStringPProtoValue, err := converter.MapRegisteredModelProperties((*source).Model)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Properties: %w", err)
 		}
 		protoContext.Properties = mapStringPProtoValue
-		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties((*source).CustomProperties)
+		var pMapStringOpenapiMetadataValue *map[string]openapi.MetadataValue
+		if (*source).Model != nil {
+			pMapStringOpenapiMetadataValue = (*source).Model.CustomProperties
+		}
+		mapStringPProtoValue2, err := converter.MapOpenAPICustomProperties(pMapStringOpenapiMetadataValue)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field CustomProperties: %w", err)
 		}
