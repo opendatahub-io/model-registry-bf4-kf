@@ -1,4 +1,4 @@
-package core_test
+package core
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/opendatahub-io/model-registry/internal/converter"
-	"github.com/opendatahub-io/model-registry/internal/core"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/opendatahub-io/model-registry/internal/testutils"
@@ -54,14 +53,14 @@ func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataSt
 }
 
 // initialize model registry service and assert no error is thrown
-func initModelRegistryService(assertion *assert.Assertions, conn *grpc.ClientConn) core.ModelRegistryApi {
-	service, err := core.NewModelRegistryService(conn)
+func initModelRegistryService(assertion *assert.Assertions, conn *grpc.ClientConn) ModelRegistryApi {
+	service, err := NewModelRegistryService(conn)
 	assertion.Nilf(err, "error creating core service: %v", err)
 	return service
 }
 
 // utility function that register a new simple model and return its ID
-func registerModel(assertion *assert.Assertions, service core.ModelRegistryApi, overrideModelName *string, overrideExternalId *string) string {
+func registerModel(assertion *assert.Assertions, service ModelRegistryApi, overrideModelName *string, overrideExternalId *string) string {
 	registeredModel := &openapi.RegisteredModel{
 		Name:       &modelName,
 		ExternalID: &modelExternalId,
@@ -92,7 +91,7 @@ func registerModel(assertion *assert.Assertions, service core.ModelRegistryApi, 
 // utility function that register a new simple model and return its ID
 func registerModelVersion(
 	assertion *assert.Assertions,
-	service core.ModelRegistryApi,
+	service ModelRegistryApi,
 	overrideModelName *string,
 	overrideExternalId *string,
 	overrideVersionName *string,
@@ -136,22 +135,22 @@ func TestModelRegistryTypes(t *testing.T) {
 	// assure the types have been correctly setup at startup
 	ctx := context.Background()
 	regModelResp, _ := client.GetContextType(ctx, &proto.GetContextTypeRequest{
-		TypeName: &core.RegisteredModelTypeName,
+		TypeName: registeredModelTypeName,
 	})
-	assertion.NotNilf(regModelResp.ContextType, "registered model type %s should exists", core.RegisteredModelTypeName)
-	assertion.Equal(core.RegisteredModelTypeName, *regModelResp.ContextType.Name)
+	assertion.NotNilf(regModelResp.ContextType, "registered model type %s should exists", *registeredModelTypeName)
+	assertion.Equal(*registeredModelTypeName, *regModelResp.ContextType.Name)
 
 	modelVersionResp, _ := client.GetContextType(ctx, &proto.GetContextTypeRequest{
-		TypeName: &core.ModelVersionTypeName,
+		TypeName: modelVersionTypeName,
 	})
-	assertion.NotNilf(modelVersionResp.ContextType, "model version type %s should exists", core.ModelVersionTypeName)
-	assertion.Equal(core.ModelVersionTypeName, *modelVersionResp.ContextType.Name)
+	assertion.NotNilf(modelVersionResp.ContextType, "model version type %s should exists", *modelVersionTypeName)
+	assertion.Equal(*modelVersionTypeName, *modelVersionResp.ContextType.Name)
 
 	modelArtifactResp, _ := client.GetArtifactType(ctx, &proto.GetArtifactTypeRequest{
-		TypeName: &core.ModelArtifactTypeName,
+		TypeName: modelArtifactTypeName,
 	})
-	assertion.NotNilf(modelArtifactResp.ArtifactType, "model version type %s should exists", core.ModelArtifactTypeName)
-	assertion.Equal(core.ModelArtifactTypeName, *modelArtifactResp.ArtifactType.Name)
+	assertion.NotNilf(modelArtifactResp.ArtifactType, "model version type %s should exists", *modelArtifactTypeName)
+	assertion.Equal(*modelArtifactTypeName, *modelArtifactResp.ArtifactType.Name)
 }
 
 // REGISTERED MODELS
@@ -423,7 +422,7 @@ func TestGetRegisteredModelsOrderedById(t *testing.T) {
 	_, err = service.UpsertRegisteredModel(registeredModel)
 	assertion.Nilf(err, "error creating registered model: %v", err)
 
-	orderedById, err := service.GetRegisteredModels(core.ListOptions{
+	orderedById, err := service.GetRegisteredModels(ListOptions{
 		OrderBy:   &orderBy,
 		SortOrder: &ascOrderDirection,
 	})
@@ -434,7 +433,7 @@ func TestGetRegisteredModelsOrderedById(t *testing.T) {
 		assertion.Less(*orderedById.Items[i].Id, *orderedById.Items[i+1].Id)
 	}
 
-	orderedById, err = service.GetRegisteredModels(core.ListOptions{
+	orderedById, err = service.GetRegisteredModels(ListOptions{
 		OrderBy:   &orderBy,
 		SortOrder: &descOrderDirection,
 	})
@@ -483,7 +482,7 @@ func TestGetRegisteredModelsOrderedByLastUpdate(t *testing.T) {
 	_, err = service.UpsertRegisteredModel(secondModel)
 	assertion.Nilf(err, "error creating registered model: %v", err)
 
-	orderedById, err := service.GetRegisteredModels(core.ListOptions{
+	orderedById, err := service.GetRegisteredModels(ListOptions{
 		OrderBy:   &orderBy,
 		SortOrder: &ascOrderDirection,
 	})
@@ -494,7 +493,7 @@ func TestGetRegisteredModelsOrderedByLastUpdate(t *testing.T) {
 	assertion.Equal(*thirdModel.Id, *orderedById.Items[1].Id)
 	assertion.Equal(*secondModel.Id, *orderedById.Items[2].Id)
 
-	orderedById, err = service.GetRegisteredModels(core.ListOptions{
+	orderedById, err = service.GetRegisteredModels(ListOptions{
 		OrderBy:   &orderBy,
 		SortOrder: &descOrderDirection,
 	})
@@ -541,7 +540,7 @@ func TestGetRegisteredModelsWithPageSize(t *testing.T) {
 	thirdModel, err := service.UpsertRegisteredModel(registeredModel)
 	assertion.Nilf(err, "error creating registered model: %v", err)
 
-	truncatedList, err := service.GetRegisteredModels(core.ListOptions{
+	truncatedList, err := service.GetRegisteredModels(ListOptions{
 		PageSize: &pageSize,
 	})
 	assertion.Nilf(err, "error getting registered models: %v", err)
@@ -550,7 +549,7 @@ func TestGetRegisteredModelsWithPageSize(t *testing.T) {
 	assertion.NotEqual("", truncatedList.NextPageToken, "next page token should not be empty")
 	assertion.Equal(*firstModel.Id, *truncatedList.Items[0].Id)
 
-	truncatedList, err = service.GetRegisteredModels(core.ListOptions{
+	truncatedList, err = service.GetRegisteredModels(ListOptions{
 		PageSize:      &pageSize2,
 		NextPageToken: &truncatedList.NextPageToken,
 	})
@@ -604,7 +603,7 @@ func TestCreateModelVersion(t *testing.T) {
 	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, modelVersionName), *byId.Contexts[0].Name, "saved model name should match the provided one")
 	assertion.Equal(versionExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
 	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
-	assertion.Equalf(core.ModelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", core.ModelVersionTypeName)
+	assertion.Equalf(*modelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *modelVersionTypeName)
 
 	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
 	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
@@ -697,7 +696,7 @@ func TestUpdateModelVersion(t *testing.T) {
 	assertion.Equal(newExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
 	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
 	assertion.Equal(newScore, byId.Contexts[0].CustomProperties["score"].GetDoubleValue(), "saved score custom property should match the provided one")
-	assertion.Equalf(core.ModelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", core.ModelVersionTypeName)
+	assertion.Equalf(*modelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *modelVersionTypeName)
 
 	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
 	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
@@ -727,7 +726,7 @@ func TestUpdateModelVersion(t *testing.T) {
 	assertion.Equal(newExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
 	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
 	assertion.Equal(newScore, byId.Contexts[0].CustomProperties["score"].GetDoubleValue(), "saved score custom property should match the provided one")
-	assertion.Equalf(core.ModelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", core.ModelVersionTypeName)
+	assertion.Equalf(*modelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *modelVersionTypeName)
 }
 
 func TestUpdateModelVersionFailure(t *testing.T) {
@@ -989,11 +988,11 @@ func TestGetModelVersions(t *testing.T) {
 	createdVersionId2, _ := converter.StringToInt64(createdVersion2.Id)
 	createdVersionId3, _ := converter.StringToInt64(createdVersion3.Id)
 
-	getAll, err := service.GetModelVersions(core.ListOptions{}, nil)
+	getAll, err := service.GetModelVersions(ListOptions{}, nil)
 	assertion.Nilf(err, "error getting all model versions")
 	assertion.Equal(int32(4), getAll.Size, "expected four model versions across all registered models")
 
-	getAllByRegModel, err := service.GetModelVersions(core.ListOptions{}, &registeredModelId)
+	getAllByRegModel, err := service.GetModelVersions(ListOptions{}, &registeredModelId)
 	assertion.Nilf(err, "error getting all model versions")
 	assertion.Equalf(int32(3), getAllByRegModel.Size, "expected three model versions for registered model %d", registeredModelId)
 
@@ -1003,7 +1002,7 @@ func TestGetModelVersions(t *testing.T) {
 
 	// order by last update time, expecting last created as first
 	orderByLastUpdate := "LAST_UPDATE_TIME"
-	getAllByRegModel, err = service.GetModelVersions(core.ListOptions{
+	getAllByRegModel, err = service.GetModelVersions(ListOptions{
 		OrderBy:   &orderByLastUpdate,
 		SortOrder: &descOrderDirection,
 	}, &registeredModelId)
@@ -1022,7 +1021,7 @@ func TestGetModelVersions(t *testing.T) {
 
 	assertion.Equal(newVersionExternalId, *createdVersion2.ExternalID)
 
-	getAllByRegModel, err = service.GetModelVersions(core.ListOptions{
+	getAllByRegModel, err = service.GetModelVersions(ListOptions{
 		OrderBy:   &orderByLastUpdate,
 		SortOrder: &descOrderDirection,
 	}, &registeredModelId)
@@ -1397,7 +1396,7 @@ func TestGetModelArtifacts(t *testing.T) {
 	createdArtifactId2, _ := converter.StringToInt64(createdArtifact2.Id)
 	createdArtifactId3, _ := converter.StringToInt64(createdArtifact3.Id)
 
-	getAll, err := service.GetModelArtifacts(core.ListOptions{}, nil)
+	getAll, err := service.GetModelArtifacts(ListOptions{}, nil)
 	assertion.Nilf(err, "error getting all model artifacts")
 	assertion.Equalf(int32(3), getAll.Size, "expected three model artifacts")
 
@@ -1406,7 +1405,7 @@ func TestGetModelArtifacts(t *testing.T) {
 	assertion.Equal(*converter.Int64ToString(createdArtifactId3), *getAll.Items[2].Id)
 
 	orderByLastUpdate := "LAST_UPDATE_TIME"
-	getAllByModelVersion, err := service.GetModelArtifacts(core.ListOptions{
+	getAllByModelVersion, err := service.GetModelArtifacts(ListOptions{
 		OrderBy:   &orderByLastUpdate,
 		SortOrder: &descOrderDirection,
 	}, &modelVersionId)

@@ -12,12 +12,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-const (
-	RegisteredModelTypeName = "odh.RegisteredModel"
-	ModelVersionTypeName    = "odh.ModelVersion"
-	ModelArtifactTypeName   = "odh.ModelArtifact"
-)
-
 // StringToInt64 converts string-based id to int64 if numeric, otherwise return error
 func StringToInt64(id *string) (*int64, error) {
 	if id == nil {
@@ -101,9 +95,11 @@ func MapOpenAPICustomProperties(source *map[string]openapi.MetadataValue) (map[s
 // For owned entity such as ModelVersion
 // for potentially owned entity such as ModelArtifact
 func PrefixWhenOwned(ownerId *string, entityName string) string {
-	prefix := uuid.New().String()
+	var prefix string
 	if ownerId != nil {
 		prefix = *ownerId
+	} else {
+		prefix = uuid.New().String()
 	}
 	prefixedName := fmt.Sprintf("%s:%s", prefix, entityName)
 	return prefixedName
@@ -120,7 +116,7 @@ func MapRegisteredModelProperties(source *openapi.RegisteredModel) (map[string]*
 
 // MapRegisteredModelType returnd RegisteredModel corresponding MLMD context type
 func MapRegisteredModelType(_ *openapi.RegisteredModel) *string {
-	return Of(RegisteredModelTypeName)
+	return of(RegisteredModelTypeName)
 }
 
 // MODEL VERSION
@@ -153,13 +149,13 @@ func MapModelVersionProperties(source *OpenAPIModelWrapper[openapi.ModelVersion]
 
 // MapModelVersionType returnd ModelVersion corresponding MLMD context type
 func MapModelVersionType(_ *openapi.ModelVersion) *string {
-	return Of(ModelVersionTypeName)
+	return of(ModelVersionTypeName)
 }
 
 // MapModelVersionName maps the user-provided name into MLMD one, i.e., prefixing it with
 // either the parent resource id or a generated uuid
 func MapModelVersionName(source *OpenAPIModelWrapper[openapi.ModelVersion]) *string {
-	return Of(PrefixWhenOwned(source.ParentResourceId, *(*source).Model.Name))
+	return of(PrefixWhenOwned(source.ParentResourceId, *(*source).Model.Name))
 }
 
 // MODEL ARTIFACT
@@ -181,7 +177,7 @@ func MapModelArtifactProperties(source *openapi.ModelArtifact) (map[string]*prot
 
 // MapModelArtifactType returnd ModelArtifact corresponding MLMD context type
 func MapModelArtifactType(_ *openapi.ModelArtifact) *string {
-	return Of(ModelArtifactTypeName)
+	return of(ModelArtifactTypeName)
 }
 
 // MapModelArtifactName maps the user-provided name into MLMD one, i.e., prefixing it with
@@ -195,7 +191,7 @@ func MapModelArtifactName(source *OpenAPIModelWrapper[openapi.ModelArtifact]) *s
 	} else {
 		artifactName = uuid.New().String()
 	}
-	return Of(PrefixWhenOwned(source.ParentResourceId, artifactName))
+	return of(PrefixWhenOwned(source.ParentResourceId, artifactName))
 }
 
 func MapOpenAPIModelArtifactState(source *openapi.ArtifactState) *proto.Artifact_State {
@@ -207,7 +203,7 @@ func MapOpenAPIModelArtifactState(source *openapi.ArtifactState) *proto.Artifact
 	return &state
 }
 
-// Of returns a pointer to the provided literal/const input
-func Of[E any](e E) *E {
+// of returns a pointer to the provided literal/const input
+func of[E any](e E) *E {
 	return &e
 }

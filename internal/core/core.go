@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/golang/glog"
 	"github.com/opendatahub-io/model-registry/internal/converter"
@@ -13,9 +12,9 @@ import (
 )
 
 var (
-	RegisteredModelTypeName = "odh.RegisteredModel"
-	ModelVersionTypeName    = "odh.ModelVersion"
-	ModelArtifactTypeName   = "odh.ModelArtifact"
+	registeredModelTypeName = of(converter.RegisteredModelTypeName)
+	modelVersionTypeName    = of(converter.ModelVersionTypeName)
+	modelArtifactTypeName   = of(converter.ModelArtifactTypeName)
 )
 
 // modelRegistryService is the core library of the model registry
@@ -33,13 +32,13 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	registeredModelReq := proto.PutContextTypeRequest{
 		ContextType: &proto.ContextType{
-			Name: &RegisteredModelTypeName,
+			Name: registeredModelTypeName,
 		},
 	}
 
 	modelVersionReq := proto.PutContextTypeRequest{
 		ContextType: &proto.ContextType{
-			Name: &ModelVersionTypeName,
+			Name: of(converter.ModelVersionTypeName),
 			Properties: map[string]proto.PropertyType{
 				"model_name": proto.PropertyType_STRING,
 				"version":    proto.PropertyType_STRING,
@@ -50,7 +49,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	modelArtifactReq := proto.PutArtifactTypeRequest{
 		ArtifactType: &proto.ArtifactType{
-			Name: &ModelArtifactTypeName,
+			Name: modelArtifactTypeName,
 			Properties: map[string]proto.PropertyType{
 				"model_format": proto.PropertyType_STRING,
 			},
@@ -59,16 +58,16 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	registeredModelResp, err := client.PutContextType(context.Background(), &registeredModelReq)
 	if err != nil {
-		log.Fatalf("Error setting up context type %s: %v", RegisteredModelTypeName, err)
+		glog.Fatalf("Error setting up context type %s: %v", registeredModelTypeName, err)
 	}
 
 	modelVersionResp, err := client.PutContextType(context.Background(), &modelVersionReq)
 	if err != nil {
-		log.Fatalf("Error setting up context type %s: %v", ModelVersionTypeName, err)
+		glog.Fatalf("Error setting up context type %s: %v", modelVersionTypeName, err)
 	}
 	modelArtifactResp, err := client.PutArtifactType(context.Background(), &modelArtifactReq)
 	if err != nil {
-		log.Fatalf("Error setting up artifact type %s: %v", ModelArtifactTypeName, err)
+		glog.Fatalf("Error setting up artifact type %s: %v", modelArtifactTypeName, err)
 	}
 
 	return &modelRegistryService{
@@ -198,7 +197,7 @@ func (serv *modelRegistryService) GetRegisteredModelByParams(name *string, exter
 	}
 
 	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &RegisteredModelTypeName,
+		TypeName: registeredModelTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -224,7 +223,7 @@ func (serv *modelRegistryService) GetRegisteredModels(listOptions ListOptions) (
 		return nil, err
 	}
 	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &RegisteredModelTypeName,
+		TypeName: registeredModelTypeName,
 		Options:  listOperationOptions,
 	})
 	if err != nil {
@@ -398,7 +397,7 @@ func (serv *modelRegistryService) GetModelVersionByParams(versionName *string, p
 	}
 
 	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &ModelVersionTypeName,
+		TypeName: modelVersionTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -430,7 +429,7 @@ func (serv *modelRegistryService) GetModelVersions(listOptions ListOptions, pare
 	}
 
 	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
-		TypeName: &ModelVersionTypeName,
+		TypeName: modelVersionTypeName,
 		Options:  listOperationOptions,
 	})
 	if err != nil {
@@ -577,7 +576,7 @@ func (serv *modelRegistryService) GetModelArtifactByParams(artifactName *string,
 	}
 
 	artifactsResponse, err := serv.mlmdClient.GetArtifactsByType(context.Background(), &proto.GetArtifactsByTypeRequest{
-		TypeName: &ModelArtifactTypeName,
+		TypeName: modelArtifactTypeName,
 		Options: &proto.ListOperationOptions{
 			FilterQuery: &filterQuery,
 		},
@@ -622,7 +621,7 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, par
 		nextPageToken = artifactsResp.NextPageToken
 	} else {
 		artifactsResp, err := serv.mlmdClient.GetArtifactsByType(context.Background(), &proto.GetArtifactsByTypeRequest{
-			TypeName: &ModelArtifactTypeName,
+			TypeName: modelArtifactTypeName,
 			Options:  listOperationOptions,
 		})
 		if err != nil {
@@ -648,4 +647,9 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, par
 		Items:         results,
 	}
 	return &toReturn, nil
+}
+
+// of returns a pointer to the provided literal/const input
+func of[E any](e E) *E {
+	return &e
 }

@@ -5,6 +5,12 @@ import (
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
 
+const (
+	RegisteredModelTypeName = "odh.RegisteredModel"
+	ModelVersionTypeName    = "odh.ModelVersion"
+	ModelArtifactTypeName   = "odh.ModelArtifact"
+)
+
 type OpenAPIModelWrapper[M openapi.RegisteredModel | openapi.ModelVersion | openapi.ModelArtifact] struct {
 	TypeId           int64
 	Model            *M
@@ -12,7 +18,6 @@ type OpenAPIModelWrapper[M openapi.RegisteredModel | openapi.ModelVersion | open
 	ModelName        *string // optional registered model name
 }
 
-// TODO: we don't know the TypeId for MLMD types at thsi step, need to find out how to retrieve it
 // goverter:converter
 // goverter:output:file ./generated/openapi_mlmd_converter.gen.go
 // goverter:wrapErrors
@@ -28,7 +33,6 @@ type OpenAPIToMLMDConverter interface {
 	// goverter:ignore state sizeCache unknownFields SystemMetadata CreateTimeSinceEpoch LastUpdateTimeSinceEpoch
 	ConvertRegisteredModel(source *OpenAPIModelWrapper[openapi.RegisteredModel]) (*proto.Context, error)
 
-	// TODO: note that we don't know the registeredModel here, therefore name cannot be prefixed at this step
 	// goverter:autoMap Model
 	// goverter:map . Name | MapModelVersionName
 	// goverter:map Model Type | MapModelVersionType
@@ -36,7 +40,6 @@ type OpenAPIToMLMDConverter interface {
 	// goverter:ignore state sizeCache unknownFields SystemMetadata CreateTimeSinceEpoch LastUpdateTimeSinceEpoch
 	ConvertModelVersion(source *OpenAPIModelWrapper[openapi.ModelVersion]) (*proto.Context, error)
 
-	// TODO: note that we don't know the modelVersion here, therefore name cannot be prefixed at this step
 	// goverter:autoMap Model
 	// goverter:map . Name | MapModelArtifactName
 	// goverter:map Model Type | MapModelArtifactType
