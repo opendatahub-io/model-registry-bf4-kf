@@ -140,12 +140,9 @@ func (s *ModelRegistryServiceAPIService) CreateModelVersion(ctx context.Context,
 
 // CreateModelVersionArtifact - Create an Artifact in a ModelVersion
 func (s *ModelRegistryServiceAPIService) CreateModelVersionArtifact(ctx context.Context, modelversionId string, artifact model.Artifact) (ImplResponse, error) {
-	// does not even reach the below check which is commented.
-	// panics earlier in type_asserts.go:19
-	// from api_model_registry_service.go:379
-	// if artifact.ModelArtifact == nil {
-	// 	return Response(http.StatusNotImplemented, nil), errors.New("unsupported artifactType")
-	// }
+	if artifact.ModelArtifact == nil {
+		return Response(http.StatusNotImplemented, nil), errors.New("unsupported artifactType")
+	}
 	result, err := s.coreApi.UpsertModelArtifact(artifact.ModelArtifact, &modelversionId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
