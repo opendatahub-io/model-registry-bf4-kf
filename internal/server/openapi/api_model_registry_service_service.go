@@ -175,25 +175,14 @@ func (s *ModelRegistryServiceAPIService) CreateRegisteredModel(ctx context.Conte
 
 // CreateRegisteredModelVersion - Create a ModelVersion in RegisteredModel
 func (s *ModelRegistryServiceAPIService) CreateRegisteredModelVersion(ctx context.Context, registeredmodelId string, modelVersion model.ModelVersion) (ImplResponse, error) {
-	// TODO - update CreateRegisteredModelVersion with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(201, ModelVersion{}) or use other options such as http.Ok ...
-	// return Response(201, ModelVersion{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("CreateRegisteredModelVersion method not implemented")
+	result, err := s.coreApi.UpsertModelVersion(&modelVersion, &registeredmodelId)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(201, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // CreateServingEnvironment - Create a ServingEnvironment
@@ -241,68 +230,38 @@ func (s *ModelRegistryServiceAPIService) FindInferenceService(ctx context.Contex
 
 // FindModelArtifact - Get a ModelArtifact that matches search parameters.
 func (s *ModelRegistryServiceAPIService) FindModelArtifact(ctx context.Context, name string, externalID string, parentResourceID string) (ImplResponse, error) {
-	// TODO - update FindModelArtifact with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelArtifact{}) or use other options such as http.Ok ...
-	// return Response(200, ModelArtifact{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("FindModelArtifact method not implemented")
+	result, err := s.coreApi.GetModelArtifactByParams(&name, &externalID, &parentResourceID)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return esponse(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // FindModelVersion - Get a ModelVersion that matches search parameters.
 func (s *ModelRegistryServiceAPIService) FindModelVersion(ctx context.Context, name string, externalID string, registeredModelID string) (ImplResponse, error) {
-	// TODO - update FindModelVersion with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelVersion{}) or use other options such as http.Ok ...
-	// return Response(200, ModelVersion{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("FindModelVersion method not implemented")
+	result, err := s.coreApi.GetModelVersionByParams(&name, &externalID, &registeredModelID)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return esponse(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // FindRegisteredModel - Get a RegisteredModel that matches search parameters.
 func (s *ModelRegistryServiceAPIService) FindRegisteredModel(ctx context.Context, name string, externalID string) (ImplResponse, error) {
-	// TODO - update FindRegisteredModel with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, RegisteredModel{}) or use other options such as http.Ok ...
-	// return Response(200, RegisteredModel{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("FindRegisteredModel method not implemented")
+	result, err := s.coreApi.GetRegisteredModelByParams(&name, &externalID)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return esponse(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // FindServingEnvironment - Find ServingEnvironment
