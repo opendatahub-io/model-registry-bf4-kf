@@ -620,71 +620,54 @@ func (s *ModelRegistryServiceAPIService) UpdateInferenceService(ctx context.Cont
 
 // UpdateModelArtifact - Update a ModelArtifact
 func (s *ModelRegistryServiceAPIService) UpdateModelArtifact(ctx context.Context, modelartifactId string, modelArtifactUpdate model.ModelArtifactUpdate) (ImplResponse, error) {
-	// TODO - update UpdateModelArtifact with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelArtifact{}) or use other options such as http.Ok ...
-	// return Response(200, ModelArtifact{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("UpdateModelArtifact method not implemented")
+	modelArtifact, err := s.converter.ConvertModelArtifactUpdate(&modelArtifactUpdate)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	modelArtifact.Id = &modelartifactId
+	result, err := s.coreApi.UpsertModelArtifact(modelArtifact, nil)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // UpdateModelVersion - Update a ModelVersion
 func (s *ModelRegistryServiceAPIService) UpdateModelVersion(ctx context.Context, modelversionId string, modelVersion model.ModelVersion) (ImplResponse, error) {
-	// TODO - update UpdateModelVersion with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelVersion{}) or use other options such as http.Ok ...
-	// return Response(200, ModelVersion{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("UpdateModelVersion method not implemented")
+	// TODO: this API is getting model.ModelVersion instead of model.ModelVersionUpdate.
+	// c, err := s.converter.ConvertModelVersionUpdate(&modelVersion)
+	// if err != nil {
+	// 	return Response(500, model.Error{Message: err.Error()}), nil
+	// }
+	// modelVersion.Id = &modelversionId
+	result, err := s.coreApi.UpsertModelVersion(&modelVersion, nil)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // UpdateRegisteredModel - Update a RegisteredModel
 func (s *ModelRegistryServiceAPIService) UpdateRegisteredModel(ctx context.Context, registeredmodelId string, registeredModelUpdate model.RegisteredModelUpdate) (ImplResponse, error) {
-	// TODO - update UpdateRegisteredModel with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, RegisteredModel{}) or use other options such as http.Ok ...
-	// return Response(200, RegisteredModel{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("UpdateRegisteredModel method not implemented")
+	registeredModel, err := s.converter.ConvertRegisteredModelUpdate(&registeredModelUpdate)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	registeredModel.Id = &registeredmodelId
+	result, err := s.coreApi.UpsertRegisteredModel(registeredModel)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // UpdateServingEnvironment - Update a ServingEnvironment
