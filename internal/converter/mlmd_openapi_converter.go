@@ -23,8 +23,12 @@ type MLMDToOpenAPIConverter interface {
 	// TODO: map actually ignored properties from Artifact.Properties
 	// goverter:map Name | MapNameFromOwned
 	// goverter:map . ArtifactType | MapArtifactType
-	// goverter:map . ModelFormatName | MapModelFormatName
 	// goverter:map State | MapMLMDModelArtifactState
-	// goverter:ignore Runtime StorageKey StoragePath ModelFormatVersion ServiceAccountName
+	// goverter:map Properties Runtime | MapModelArtifactRuntime
+	// goverter:map Properties ModelFormatName | MapModelArtifactFormatName
+	// goverter:map Properties ModelFormatVersion | MapModelArtifactFormatVersion
+	// goverter:map Properties StorageKey | MapModelArtifactStorageKey
+	// goverter:map Properties StoragePath | MapModelArtifactStoragePath
+	// goverter:map Properties ServiceAccountName | MapModelArtifactServiceAccountName
 	ConvertModelArtifact(source *proto.Artifact) (*openapi.ModelArtifact, error)
 }

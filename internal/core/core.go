@@ -51,7 +51,12 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 		ArtifactType: &proto.ArtifactType{
 			Name: modelArtifactTypeName,
 			Properties: map[string]proto.PropertyType{
-				"model_format": proto.PropertyType_STRING,
+				"runtime":              proto.PropertyType_STRING,
+				"model_format_name":    proto.PropertyType_STRING,
+				"model_format_version": proto.PropertyType_STRING,
+				"storage_key":          proto.PropertyType_STRING,
+				"storage_path":         proto.PropertyType_STRING,
+				"service_account_name": proto.PropertyType_STRING,
 			},
 		},
 	}

@@ -164,10 +164,45 @@ func MapModelVersionName(source *OpenAPIModelWrapper[openapi.ModelVersion]) *str
 func MapModelArtifactProperties(source *openapi.ModelArtifact) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 	if source != nil {
+		if source.Runtime != nil {
+			props["runtime"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.Runtime,
+				},
+			}
+		}
 		if source.ModelFormatName != nil {
-			props["model_format"] = &proto.Value{
+			props["model_format_name"] = &proto.Value{
 				Value: &proto.Value_StringValue{
 					StringValue: *source.ModelFormatName,
+				},
+			}
+		}
+		if source.ModelFormatVersion != nil {
+			props["model_format_version"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.ModelFormatVersion,
+				},
+			}
+		}
+		if source.StorageKey != nil {
+			props["storage_key"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.StorageKey,
+				},
+			}
+		}
+		if source.StoragePath != nil {
+			props["storage_path"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.StoragePath,
+				},
+			}
+		}
+		if source.ServiceAccountName != nil {
+			props["service_account_name"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.ServiceAccountName,
 				},
 			}
 		}

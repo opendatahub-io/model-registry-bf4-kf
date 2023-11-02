@@ -42,7 +42,12 @@ func (c *MLMDToOpenAPIConverterImpl) ConvertModelArtifact(source *proto.Artifact
 			return nil, fmt.Errorf("error setting field ArtifactType: %w", err)
 		}
 		openapiModelArtifact.ArtifactType = xstring3
-		openapiModelArtifact.ModelFormatName = converter.MapModelFormatName(source)
+		openapiModelArtifact.ModelFormatName = converter.MapModelArtifactFormatName((*source).Properties)
+		openapiModelArtifact.Runtime = converter.MapModelArtifactRuntime((*source).Properties)
+		openapiModelArtifact.StorageKey = converter.MapModelArtifactStorageKey((*source).Properties)
+		openapiModelArtifact.StoragePath = converter.MapModelArtifactStoragePath((*source).Properties)
+		openapiModelArtifact.ModelFormatVersion = converter.MapModelArtifactFormatVersion((*source).Properties)
+		openapiModelArtifact.ServiceAccountName = converter.MapModelArtifactServiceAccountName((*source).Properties)
 		pOpenapiModelArtifact = &openapiModelArtifact
 	}
 	return pOpenapiModelArtifact, nil

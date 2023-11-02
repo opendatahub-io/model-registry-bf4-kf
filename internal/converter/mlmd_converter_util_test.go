@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/model/openapi"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -228,12 +229,22 @@ func TestMapModelArtifactProperties(t *testing.T) {
 	assertion := setup(t)
 
 	props, err := MapModelArtifactProperties(&openapi.ModelArtifact{
-		Name:            of("v1"),
-		ModelFormatName: of("sklearn"),
+		Name:               of("v1"),
+		ModelFormatName:    of("sklearn"),
+		ModelFormatVersion: of("1.0"),
+		Runtime:            of("my-runtime"),
+		StorageKey:         of("storage-key"),
+		StoragePath:        of("storage-path"),
+		ServiceAccountName: of("service-account-name"),
 	})
 	assertion.Nil(err)
-	assertion.Equal(1, len(props))
-	// TODO check value
+	assertion.Equal(6, len(props))
+	assertion.Equal("sklearn", props["model_format_name"].GetStringValue())
+	assertion.Equal("1.0", props["model_format_version"].GetStringValue())
+	assertion.Equal("my-runtime", props["runtime"].GetStringValue())
+	assertion.Equal("storage-key", props["storage_key"].GetStringValue())
+	assertion.Equal("storage-path", props["storage_path"].GetStringValue())
+	assertion.Equal("service-account-name", props["service_account_name"].GetStringValue())
 
 	props, err = MapModelArtifactProperties(&openapi.ModelArtifact{
 		Name: of("v1"),
@@ -292,4 +303,139 @@ func TestMapOpenAPIModelArtifactState(t *testing.T) {
 
 	state = MapOpenAPIModelArtifactState(nil)
 	assertion.Nil(state)
+}
+
+func TestMapStringPropertyWithMissingKey(t *testing.T) {
+	assertion := setup(t)
+
+	notPresent := MapStringProperty(map[string]*proto.Value{}, "not_present")
+
+	assertion.Nil(notPresent)
+}
+
+func TestMapModelArtifactRuntime(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactRuntime(map[string]*proto.Value{
+		"runtime": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-runtime",
+			},
+		},
+	})
+
+	assertion.Equal("my-runtime", *extracted)
+}
+
+func TestMapModelArtifactFormatName(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactFormatName(map[string]*proto.Value{
+		"model_format_name": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-name",
+			},
+		},
+	})
+
+	assertion.Equal("my-name", *extracted)
+}
+
+func TestMapModelArtifactFormatVersion(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactFormatVersion(map[string]*proto.Value{
+		"model_format_version": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-version",
+			},
+		},
+	})
+
+	assertion.Equal("my-version", *extracted)
+}
+
+func TestMapModelArtifactStorageKey(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactStorageKey(map[string]*proto.Value{
+		"storage_key": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-key",
+			},
+		},
+	})
+
+	assertion.Equal("my-key", *extracted)
+}
+
+func TestMapModelArtifactStoragePath(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactStoragePath(map[string]*proto.Value{
+		"storage_path": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-path",
+			},
+		},
+	})
+
+	assertion.Equal("my-path", *extracted)
+}
+
+func TestMapModelArtifactServiceAccountName(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapModelArtifactServiceAccountName(map[string]*proto.Value{
+		"service_account_name": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-account",
+			},
+		},
+	})
+
+	assertion.Equal("my-account", *extracted)
+}
+
+func TestMapNameFromOwned(t *testing.T) {
+	assertion := setup(t)
+
+	name := MapNameFromOwned(of("prefix:name"))
+	assertion.Equal("name", *name)
+
+	name = MapNameFromOwned(of("name"))
+	assertion.Equal("name", *name)
+
+	name = MapNameFromOwned(of("prefix:name:postfix"))
+	assertion.Equal("name", *name)
+
+	name = MapNameFromOwned(nil)
+	assertion.Nil(name)
+}
+
+func TestMapArtifactType(t *testing.T) {
+	assertion := setup(t)
+
+	artifactType, err := MapArtifactType(&proto.Artifact{
+		Type: of(ModelArtifactTypeName),
+	})
+	assertion.Nil(err)
+	assertion.Equal("model-artifact", artifactType)
+
+	artifactType, err = MapArtifactType(&proto.Artifact{
+		Type: of("Invalid"),
+	})
+	assertion.NotNil(err)
+	assertion.Equal("", artifactType)
+}
+
+func TestMapMLMDModelArtifactState(t *testing.T) {
+	assertion := setup(t)
+
+	artifactState := MapMLMDModelArtifactState(proto.Artifact_LIVE.Enum())
+	assertion.NotNil(artifactState)
+	assertion.Equal("LIVE", string(*artifactState))
+
+	artifactState = MapMLMDModelArtifactState(nil)
+	assertion.Nil(artifactState)
 }

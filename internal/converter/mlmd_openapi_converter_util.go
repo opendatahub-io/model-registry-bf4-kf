@@ -84,19 +84,6 @@ func MapArtifactType(source *proto.Artifact) (string, error) {
 	return "", fmt.Errorf("invalid artifact type found")
 }
 
-func MapModelFormatName(source *proto.Artifact) *string {
-	var value string
-	property := source.Properties["model_format"]
-	if property != nil {
-		value = property.GetStringValue()
-	}
-
-	if value == "" {
-		return nil
-	}
-	return &value
-}
-
 func MapMLMDModelArtifactState(source *proto.Artifact_State) *openapi.ArtifactState {
 	if source == nil {
 		return nil
@@ -106,6 +93,39 @@ func MapMLMDModelArtifactState(source *proto.Artifact_State) *openapi.ArtifactSt
 	return (*openapi.ArtifactState)(&state)
 }
 
-// MapModelArtifactProperties maps ModelArtifact fields to specific MLMD properties
+// MapStringProperty maps proto.Artifact property to specific ModelArtifact string field
+func MapStringProperty(properties map[string]*proto.Value, key string) *string {
+	val, ok := properties[key]
+	if ok {
+		res := val.GetStringValue()
+		if res != "" {
+			return &res
+		}
+	}
 
-// MapModelArtifactType returnd ModelArtifact corresponding MLMD context type
+	return nil
+}
+
+func MapModelArtifactRuntime(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "runtime")
+}
+
+func MapModelArtifactFormatName(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "model_format_name")
+}
+
+func MapModelArtifactFormatVersion(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "model_format_version")
+}
+
+func MapModelArtifactStorageKey(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "storage_key")
+}
+
+func MapModelArtifactStoragePath(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "storage_path")
+}
+
+func MapModelArtifactServiceAccountName(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "service_account_name")
+}
