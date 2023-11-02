@@ -17,6 +17,7 @@ import (
 	"github.com/opendatahub-io/model-registry/internal/converter"
 	"github.com/opendatahub-io/model-registry/internal/converter/generated"
 	"github.com/opendatahub-io/model-registry/internal/core"
+	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	model "github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
 
@@ -420,25 +421,25 @@ func (s *ModelRegistryServiceAPIService) GetModelArtifact(ctx context.Context, m
 
 // GetModelArtifacts - List All ModelArtifacts
 func (s *ModelRegistryServiceAPIService) GetModelArtifacts(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
-	// TODO - update GetModelArtifacts with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelArtifactList{}) or use other options such as http.Ok ...
-	// return Response(200, ModelArtifactList{}), nil
-
-	// TODO: Uncomment the next line to return response Response(400, Error{}) or use other options such as http.Ok ...
-	// return Response(400, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetModelArtifacts method not implemented")
+	orderByString := string(orderBy)
+	sortOrderString := string(sortOrder)
+	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	result, err := s.coreApi.GetModelArtifacts(core.ListOptions{
+		PageSize:      &pageSizeInt32,
+		OrderBy:       &orderByString,
+		SortOrder:     &sortOrderString,
+		NextPageToken: &nextPageToken,
+	}, nil)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // GetModelVersion - Get a ModelVersion
@@ -454,39 +455,49 @@ func (s *ModelRegistryServiceAPIService) GetModelVersion(ctx context.Context, mo
 
 // GetModelVersionArtifacts - List All ModelVersion&#39;s artifacts
 func (s *ModelRegistryServiceAPIService) GetModelVersionArtifacts(ctx context.Context, modelversionId string, name string, externalID string, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
-	// TODO - update GetModelVersionArtifacts with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ArtifactList{}) or use other options such as http.Ok ...
-	// return Response(200, ArtifactList{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetModelVersionArtifacts method not implemented")
+	// TODO name unused
+	// TODO externalID unused
+	orderByString := string(orderBy)
+	sortOrderString := string(sortOrder)
+	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	result, err := s.coreApi.GetModelArtifacts(core.ListOptions{
+		PageSize:      &pageSizeInt32,
+		OrderBy:       &orderByString,
+		SortOrder:     &sortOrderString,
+		NextPageToken: &nextPageToken,
+	}, &modelversionId)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // GetModelVersions - List All ModelVersions
 func (s *ModelRegistryServiceAPIService) GetModelVersions(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
-	// TODO - update GetModelVersions with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelVersionList{}) or use other options such as http.Ok ...
-	// return Response(200, ModelVersionList{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetModelVersions method not implemented")
+	orderByString := string(orderBy)
+	sortOrderString := string(sortOrder)
+	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	result, err := s.coreApi.GetModelVersions(core.ListOptions{
+		PageSize:      &pageSizeInt32,
+		OrderBy:       &orderByString,
+		SortOrder:     &sortOrderString,
+		NextPageToken: &nextPageToken,
+	}, nil)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // GetRegisteredModel - Get a RegisteredModel
@@ -502,39 +513,49 @@ func (s *ModelRegistryServiceAPIService) GetRegisteredModel(ctx context.Context,
 
 // GetRegisteredModelVersions - List All RegisteredModel&#39;s ModelVersions
 func (s *ModelRegistryServiceAPIService) GetRegisteredModelVersions(ctx context.Context, registeredmodelId string, name string, externalID string, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
-	// TODO - update GetRegisteredModelVersions with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, ModelVersionList{}) or use other options such as http.Ok ...
-	// return Response(200, ModelVersionList{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(404, Error{}) or use other options such as http.Ok ...
-	// return Response(404, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetRegisteredModelVersions method not implemented")
+	// TODO name unused
+	// TODO externalID unused
+	orderByString := string(orderBy)
+	sortOrderString := string(sortOrder)
+	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	result, err := s.coreApi.GetModelVersions(core.ListOptions{
+		PageSize:      &pageSizeInt32,
+		OrderBy:       &orderByString,
+		SortOrder:     &sortOrderString,
+		NextPageToken: &nextPageToken,
+	}, &registeredmodelId)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // GetRegisteredModels - List All RegisteredModels
 func (s *ModelRegistryServiceAPIService) GetRegisteredModels(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
-	// TODO - update GetRegisteredModels with the required logic for this service method.
-	// Add api_model_registry_service_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-
-	// TODO: Uncomment the next line to return response Response(200, RegisteredModelList{}) or use other options such as http.Ok ...
-	// return Response(200, RegisteredModelList{}), nil
-
-	// TODO: Uncomment the next line to return response Response(401, Error{}) or use other options such as http.Ok ...
-	// return Response(401, Error{}), nil
-
-	// TODO: Uncomment the next line to return response Response(500, Error{}) or use other options such as http.Ok ...
-	// return Response(500, Error{}), nil
-
-	return Response(http.StatusNotImplemented, nil), errors.New("GetRegisteredModels method not implemented")
+	orderByString := string(orderBy)
+	sortOrderString := string(sortOrder)
+	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	result, err := s.coreApi.GetRegisteredModels(core.ListOptions{
+		PageSize:      &pageSizeInt32,
+		OrderBy:       &orderByString,
+		SortOrder:     &sortOrderString,
+		NextPageToken: &nextPageToken,
+	})
+	if err != nil {
+		return Response(500, model.Error{Message: err.Error()}), nil
+	}
+	return Response(200, result), nil
+	// TODO return Response(400, Error{}), nil
+	// TODO return Response(401, Error{}), nil
+	// TODO return Response(404, Error{}), nil
 }
 
 // GetServingEnvironment - Get a ServingEnvironment
