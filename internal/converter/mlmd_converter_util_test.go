@@ -313,6 +313,20 @@ func TestMapStringPropertyWithMissingKey(t *testing.T) {
 	assertion.Nil(notPresent)
 }
 
+func TestMapDescription(t *testing.T) {
+	assertion := setup(t)
+
+	extracted := MapDescription(map[string]*proto.Value{
+		"description": {
+			Value: &proto.Value_StringValue{
+				StringValue: "my-description",
+			},
+		},
+	})
+
+	assertion.Equal("my-description", *extracted)
+}
+
 func TestMapModelArtifactRuntime(t *testing.T) {
 	assertion := setup(t)
 

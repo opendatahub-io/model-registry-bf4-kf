@@ -20,6 +20,7 @@ func (c *MLMDToOpenAPIConverterImpl) ConvertModelArtifact(source *proto.Artifact
 			return nil, err
 		}
 		openapiModelArtifact.CustomProperties = &mapStringOpenapiMetadataValue
+		openapiModelArtifact.Description = converter.MapDescription((*source).Properties)
 		var pString *string
 		if (*source).ExternalId != nil {
 			xstring := *(*source).ExternalId
@@ -61,6 +62,7 @@ func (c *MLMDToOpenAPIConverterImpl) ConvertModelVersion(source *proto.Context) 
 			return nil, err
 		}
 		openapiModelVersion.CustomProperties = &mapStringOpenapiMetadataValue
+		openapiModelVersion.Description = converter.MapDescription((*source).Properties)
 		var pString *string
 		if (*source).ExternalId != nil {
 			xstring := *(*source).ExternalId
@@ -84,6 +86,7 @@ func (c *MLMDToOpenAPIConverterImpl) ConvertRegisteredModel(source *proto.Contex
 			return nil, err
 		}
 		openapiRegisteredModel.CustomProperties = &mapStringOpenapiMetadataValue
+		openapiRegisteredModel.Description = converter.MapDescription((*source).Properties)
 		var pString *string
 		if (*source).ExternalId != nil {
 			xstring := *(*source).ExternalId

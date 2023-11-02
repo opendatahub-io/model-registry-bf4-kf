@@ -19,18 +19,21 @@ var (
 	ascOrderDirection  string
 	descOrderDirection string
 	// registered models
-	modelName       string
-	modelExternalId string
-	owner           string
+	modelName        string
+	modelDescription string
+	modelExternalId  string
+	owner            string
 	// model version
-	modelVersionName  string
-	versionExternalId string
-	author            string
+	modelVersionName        string
+	modelVersionDescription string
+	versionExternalId       string
+	author                  string
 	// model artifact
-	artifactName  string
-	artifactExtId string
-	artifactState string
-	artifactUri   string
+	artifactName        string
+	artifactDescription string
+	artifactExtId       string
+	artifactState       string
+	artifactUri         string
 )
 
 func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataStoreServiceClient, func(t *testing.T)) {
@@ -38,12 +41,15 @@ func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataSt
 	ascOrderDirection = "ASC"
 	descOrderDirection = "DESC"
 	modelName = "MyAwesomeModel"
+	modelDescription = "reg model description"
 	modelExternalId = "org.myawesomemodel"
 	owner = "owner"
 	modelVersionName = "v1"
+	modelVersionDescription = "model version description"
 	versionExternalId = "org.myawesomemodel@v1"
 	author = "author1"
 	artifactName = "Pickle model"
+	artifactDescription = "artifact description"
 	artifactExtId = "org.myawesomemodel@v1:pickle"
 	artifactState = "LIVE"
 	artifactUri = "path/to/model/v1"
@@ -62,8 +68,9 @@ func initModelRegistryService(assertion *assert.Assertions, conn *grpc.ClientCon
 // utility function that register a new simple model and return its ID
 func registerModel(assertion *assert.Assertions, service ModelRegistryApi, overrideModelName *string, overrideExternalId *string) string {
 	registeredModel := &openapi.RegisteredModel{
-		Name:       &modelName,
-		ExternalID: &modelExternalId,
+		Name:        &modelName,
+		ExternalID:  &modelExternalId,
+		Description: &modelDescription,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"owner": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -100,8 +107,9 @@ func registerModelVersion(
 	registeredModelId := registerModel(assertion, service, overrideModelName, overrideExternalId)
 
 	modelVersion := &openapi.ModelVersion{
-		Name:       &modelVersionName,
-		ExternalID: &versionExternalId,
+		Name:        &modelVersionName,
+		ExternalID:  &versionExternalId,
+		Description: &modelVersionDescription,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -164,8 +172,9 @@ func TestCreateRegisteredModel(t *testing.T) {
 
 	// register a new model
 	registeredModel := &openapi.RegisteredModel{
-		Name:       &modelName,
-		ExternalID: &modelExternalId,
+		Name:        &modelName,
+		ExternalID:  &modelExternalId,
+		Description: &modelDescription,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"owner": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -193,6 +202,7 @@ func TestCreateRegisteredModel(t *testing.T) {
 	assertion.Equal(*createdModel.Id, *ctxId, "returned model id should match the mlmd one")
 	assertion.Equal(modelName, *ctx.Name, "saved model name should match the provided one")
 	assertion.Equal(modelExternalId, *ctx.ExternalId, "saved external id should match the provided one")
+	assertion.Equal(modelDescription, ctx.Properties["description"].GetStringValue(), "saved description should match the provided one")
 	assertion.Equal(owner, ctx.CustomProperties["owner"].GetStringValue(), "saved owner custom property should match the provided one")
 
 	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
@@ -573,8 +583,9 @@ func TestCreateModelVersion(t *testing.T) {
 	registeredModelId := registerModel(assertion, service, nil, nil)
 
 	modelVersion := &openapi.ModelVersion{
-		Name:       &modelVersionName,
-		ExternalID: &versionExternalId,
+		Name:        &modelVersionName,
+		ExternalID:  &versionExternalId,
+		Description: &modelVersionDescription,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -603,6 +614,7 @@ func TestCreateModelVersion(t *testing.T) {
 	assertion.Equal(fmt.Sprintf("%s:%s", registeredModelId, modelVersionName), *byId.Contexts[0].Name, "saved model name should match the provided one")
 	assertion.Equal(versionExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
 	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
+	assertion.Equal(modelVersionDescription, byId.Contexts[0].Properties["description"].GetStringValue(), "saved description should match the provided one")
 	assertion.Equalf(*modelVersionTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *modelVersionTypeName)
 
 	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
@@ -1045,9 +1057,10 @@ func TestCreateModelArtifact(t *testing.T) {
 	modelVersionId := registerModelVersion(assertion, service, nil, nil, nil, nil)
 
 	modelArtifact := &openapi.ModelArtifact{
-		Name:  &artifactName,
-		State: (*openapi.ArtifactState)(&artifactState),
-		Uri:   &artifactUri,
+		Name:        &artifactName,
+		State:       (*openapi.ArtifactState)(&artifactState),
+		Uri:         &artifactUri,
+		Description: &artifactDescription,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -1065,6 +1078,7 @@ func TestCreateModelArtifact(t *testing.T) {
 	assertion.Equal(artifactName, *createdArtifact.Name)
 	assertion.Equal(*state, *createdArtifact.State)
 	assertion.Equal(artifactUri, *createdArtifact.Uri)
+	assertion.Equal(artifactDescription, *createdArtifact.Description)
 	assertion.Equal(author, *(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue)
 
 	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
@@ -1077,6 +1091,7 @@ func TestCreateModelArtifact(t *testing.T) {
 	assertion.Equal(fmt.Sprintf("%s:%s", modelVersionId, *createdArtifact.Name), *getById.Artifacts[0].Name)
 	assertion.Equal(string(*createdArtifact.State), getById.Artifacts[0].State.String())
 	assertion.Equal(*createdArtifact.Uri, *getById.Artifacts[0].Uri)
+	assertion.Equal(*createdArtifact.Description, getById.Artifacts[0].Properties["description"].GetStringValue())
 	assertion.Equal(*(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Artifacts[0].CustomProperties["author"].GetStringValue())
 
 	modelVersionIdAsInt, _ := converter.StringToInt64(&modelVersionId)

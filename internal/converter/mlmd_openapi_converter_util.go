@@ -106,6 +106,10 @@ func MapStringProperty(properties map[string]*proto.Value, key string) *string {
 	return nil
 }
 
+func MapDescription(properties map[string]*proto.Value) *string {
+	return MapStringProperty(properties, "description")
+}
+
 func MapModelArtifactRuntime(properties map[string]*proto.Value) *string {
 	return MapStringProperty(properties, "runtime")
 }

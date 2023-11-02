@@ -109,8 +109,16 @@ func PrefixWhenOwned(ownerId *string, entityName string) string {
 
 // MapRegisteredModelProperties maps RegisteredModel fields to specific MLMD properties
 func MapRegisteredModelProperties(source *openapi.RegisteredModel) (map[string]*proto.Value, error) {
-	// NOTE: at the moment there is no property specified for odh.RegisteredModel context type
 	props := make(map[string]*proto.Value)
+	if source != nil {
+		if source.Description != nil {
+			props["description"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.Description,
+				},
+			}
+		}
+	}
 	return props, nil
 }
 
@@ -125,6 +133,13 @@ func MapRegisteredModelType(_ *openapi.RegisteredModel) *string {
 func MapModelVersionProperties(source *OpenAPIModelWrapper[openapi.ModelVersion]) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 	if source != nil {
+		if (*source.Model).Description != nil {
+			props["description"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *(*source.Model).Description,
+				},
+			}
+		}
 		if (*source).ModelName != nil {
 			props["model_name"] = &proto.Value{
 				Value: &proto.Value_StringValue{
@@ -164,6 +179,13 @@ func MapModelVersionName(source *OpenAPIModelWrapper[openapi.ModelVersion]) *str
 func MapModelArtifactProperties(source *openapi.ModelArtifact) (map[string]*proto.Value, error) {
 	props := make(map[string]*proto.Value)
 	if source != nil {
+		if source.Description != nil {
+			props["description"] = &proto.Value{
+				Value: &proto.Value_StringValue{
+					StringValue: *source.Description,
+				},
+			}
+		}
 		if source.Runtime != nil {
 			props["runtime"] = &proto.Value{
 				Value: &proto.Value_StringValue{

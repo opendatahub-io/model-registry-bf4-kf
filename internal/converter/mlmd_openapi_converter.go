@@ -14,16 +14,18 @@ import (
 // goverter:extend StringToInt64
 // goverter:extend MapMLMDCustomProperties
 type MLMDToOpenAPIConverter interface {
+	// goverter:map Properties Description | MapDescription
 	ConvertRegisteredModel(source *proto.Context) (*openapi.RegisteredModel, error)
 
 	// goverter:map Name | MapNameFromOwned
-	// goverter:ignore
+	// goverter:map Properties Description | MapDescription
 	ConvertModelVersion(source *proto.Context) (*openapi.ModelVersion, error)
 
 	// TODO: map actually ignored properties from Artifact.Properties
 	// goverter:map Name | MapNameFromOwned
 	// goverter:map . ArtifactType | MapArtifactType
 	// goverter:map State | MapMLMDModelArtifactState
+	// goverter:map Properties Description | MapDescription
 	// goverter:map Properties Runtime | MapModelArtifactRuntime
 	// goverter:map Properties ModelFormatName | MapModelArtifactFormatName
 	// goverter:map Properties ModelFormatVersion | MapModelArtifactFormatVersion
