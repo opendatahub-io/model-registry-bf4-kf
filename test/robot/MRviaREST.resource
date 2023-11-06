@@ -3,7 +3,7 @@ Library    RequestsLibrary
 Library    String
 
 *** Variables ***
-${mr_host}     host.docker.internal
+${mr_host}     localhost
 
 *** Keywords ***
 I create a RegisteredModel having
