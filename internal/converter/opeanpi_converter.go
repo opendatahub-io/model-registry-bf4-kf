@@ -3,6 +3,7 @@ package converter
 import "github.com/opendatahub-io/model-registry/internal/model/openapi"
 
 // goverter:converter
+// goverter:output:file ./generated/openapi_converter.gen.go
 // goverter:wrapErrors
 // goverter:matchIgnoreCase
 // goverter:useZeroValueOnPointerInconsistency
