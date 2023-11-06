@@ -12,9 +12,12 @@ import (
 )
 
 var (
-	registeredModelTypeName = of(converter.RegisteredModelTypeName)
-	modelVersionTypeName    = of(converter.ModelVersionTypeName)
-	modelArtifactTypeName   = of(converter.ModelArtifactTypeName)
+	registeredModelTypeName    = of(converter.RegisteredModelTypeName)
+	modelVersionTypeName       = of(converter.ModelVersionTypeName)
+	modelArtifactTypeName      = of(converter.ModelArtifactTypeName)
+	servingEnvironmentTypeName = of(converter.ServingEnvironmentTypeName)
+	inferenceServiceTypeName   = of(converter.InferenceServiceTypeName)
+	serveModelTypeName         = of(converter.ServeModelTypeName)
 )
 
 // modelRegistryService is the core library of the model registry
@@ -41,7 +44,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 
 	modelVersionReq := proto.PutContextTypeRequest{
 		ContextType: &proto.ContextType{
-			Name: of(converter.ModelVersionTypeName),
+			Name: modelVersionTypeName,
 			Properties: map[string]proto.PropertyType{
 				"description": proto.PropertyType_STRING,
 				"model_name":  proto.PropertyType_STRING,
@@ -66,23 +69,79 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 		},
 	}
 
+	servingEnvironmentReq := proto.PutContextTypeRequest{
+		ContextType: &proto.ContextType{
+			Name: servingEnvironmentTypeName,
+			Properties: map[string]proto.PropertyType{
+				"description": proto.PropertyType_STRING,
+			},
+		},
+	}
+
+	inferenceServiceReq := proto.PutContextTypeRequest{
+		ContextType: &proto.ContextType{
+			Name: inferenceServiceTypeName,
+			Properties: map[string]proto.PropertyType{
+				"description":      proto.PropertyType_STRING,
+				"model_version_id": proto.PropertyType_INT,
+				// we could remove this as we will use ParentContext to keep track of this association
+				"registred_model_id":     proto.PropertyType_INT,
+				"serving_environment_id": proto.PropertyType_INT,
+			},
+		},
+	}
+
+	serveModelReq := proto.PutExecutionTypeRequest{
+		ExecutionType: &proto.ExecutionType{
+			Name: serveModelTypeName,
+			Properties: map[string]proto.PropertyType{
+				"description": proto.PropertyType_STRING,
+				// we could remove this as we will use ParentContext to keep track of this association
+				"model_version_id": proto.PropertyType_INT,
+			},
+		},
+	}
+
 	registeredModelResp, err := client.PutContextType(context.Background(), &registeredModelReq)
 	if err != nil {
-		glog.Fatalf("Error setting up context type %s: %v", registeredModelTypeName, err)
+		glog.Fatalf("Error setting up context type %s: %v", *registeredModelTypeName, err)
 	}
 
 	modelVersionResp, err := client.PutContextType(context.Background(), &modelVersionReq)
 	if err != nil {
-		glog.Fatalf("Error setting up context type %s: %v", modelVersionTypeName, err)
+		glog.Fatalf("Error setting up context type %s: %v", *modelVersionTypeName, err)
 	}
+
 	modelArtifactResp, err := client.PutArtifactType(context.Background(), &modelArtifactReq)
 	if err != nil {
-		glog.Fatalf("Error setting up artifact type %s: %v", modelArtifactTypeName, err)
+		glog.Fatalf("Error setting up artifact type %s: %v", *modelArtifactTypeName, err)
+	}
+
+	servingEnvironmentResp, err := client.PutContextType(context.Background(), &servingEnvironmentReq)
+	if err != nil {
+		glog.Fatalf("Error setting up context type %s: %v", *servingEnvironmentTypeName, err)
+	}
+
+	inferenceServiceResp, err := client.PutContextType(context.Background(), &inferenceServiceReq)
+	if err != nil {
+		glog.Fatalf("Error setting up context type %s: %v", *inferenceServiceTypeName, err)
+	}
+
+	serveModelResp, err := client.PutExecutionType(context.Background(), &serveModelReq)
+	if err != nil {
+		glog.Fatalf("Error setting up execution type %s: %v", *serveModelTypeName, err)
 	}
 
 	return &modelRegistryService{
 		mlmdClient: client,
-		mapper:     NewMapper(registeredModelResp.GetTypeId(), modelVersionResp.GetTypeId(), modelArtifactResp.GetTypeId()),
+		mapper: NewMapper(
+			registeredModelResp.GetTypeId(),
+			modelVersionResp.GetTypeId(),
+			modelArtifactResp.GetTypeId(),
+			servingEnvironmentResp.GetTypeId(),
+			inferenceServiceResp.GetTypeId(),
+			serveModelResp.GetTypeId(),
+		),
 	}, nil
 }
 
@@ -161,6 +220,10 @@ func (serv *modelRegistryService) GetRegisteredModelById(id string) (*openapi.Re
 	}
 
 	return regModel, nil
+}
+
+func (serv *modelRegistryService) GetRegisteredModelByInferenceService(inferenceServiceId string) (*openapi.RegisteredModel, error) {
+	panic("method not yet implemented")
 }
 
 func (serv *modelRegistryService) getRegisteredModelByVersionId(id string) (*openapi.RegisteredModel, error) {
@@ -363,6 +426,10 @@ func (serv *modelRegistryService) GetModelVersionById(id string) (*openapi.Model
 	}
 
 	return modelVer, nil
+}
+
+func (serv *modelRegistryService) GetModelVersionByInferenceService(inferenceServiceId string) (*openapi.ModelVersion, error) {
+	panic("method not yet implemented")
 }
 
 func (serv *modelRegistryService) getModelVersionByArtifactId(id string) (*openapi.ModelVersion, error) {
@@ -657,6 +724,56 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, par
 		Items:         results,
 	}
 	return &toReturn, nil
+}
+
+// SERVING ENVIRONMENT
+
+func (serv *modelRegistryService) UpsertServingEnvironment(registeredModel *openapi.ServingEnvironment) (*openapi.ServingEnvironment, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetServingEnvironmentById(id string) (*openapi.ServingEnvironment, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetServingEnvironmentByParams(name *string, externalId *string) (*openapi.ServingEnvironment, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetServingEnvironments(listOptions ListOptions) (*openapi.ServingEnvironmentList, error) {
+	panic("method not yet implemented")
+}
+
+// INFERENCE SERVICE
+
+func (serv *modelRegistryService) UpsertInferenceService(registeredModel *openapi.InferenceService, servingEnvironmentId *string) (*openapi.InferenceService, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetInferenceServiceById(id string) (*openapi.InferenceService, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetInferenceServiceByParams(name *string, externalId *string) (*openapi.InferenceService, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetInferenceServices(listOptions ListOptions, servingEnvironmentId *string) (*openapi.InferenceServiceList, error) {
+	panic("method not yet implemented")
+}
+
+// SERVE MODEL
+
+func (serv *modelRegistryService) UpsertServeModel(registeredModel *openapi.ServeModel, inferenceServiceId *string) (*openapi.ServeModel, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetServeModelById(id string) (*openapi.ServeModel, error) {
+	panic("method not yet implemented")
+}
+
+func (serv *modelRegistryService) GetServeModels(listOptions ListOptions, inferenceServiceId *string) (*openapi.ServeModelList, error) {
+	panic("method not yet implemented")
 }
 
 // of returns a pointer to the provided literal/const input

@@ -10,20 +10,26 @@ import (
 )
 
 type Mapper struct {
-	OpenAPIConverter      converter.OpenAPIToMLMDConverter
-	MLMDConverter         converter.MLMDToOpenAPIConverter
-	RegisteredModelTypeId int64
-	ModelVersionTypeId    int64
-	ModelArtifactTypeId   int64
+	OpenAPIConverter         converter.OpenAPIToMLMDConverter
+	MLMDConverter            converter.MLMDToOpenAPIConverter
+	RegisteredModelTypeId    int64
+	ModelVersionTypeId       int64
+	ModelArtifactTypeId      int64
+	ServingEnvironmentTypeId int64
+	InferenceServiceTypeId   int64
+	ServeModelTypeId         int64
 }
 
-func NewMapper(registeredModelTypeId int64, modelVersionTypeId int64, modelArtifactTypeId int64) *Mapper {
+func NewMapper(registeredModelTypeId int64, modelVersionTypeId int64, modelArtifactTypeId int64, servingEnvironmentTypeId int64, inferenceServiceTypeId int64, serveModelTypeId int64) *Mapper {
 	return &Mapper{
-		OpenAPIConverter:      &generated.OpenAPIToMLMDConverterImpl{},
-		MLMDConverter:         &generated.MLMDToOpenAPIConverterImpl{},
-		RegisteredModelTypeId: registeredModelTypeId,
-		ModelVersionTypeId:    modelVersionTypeId,
-		ModelArtifactTypeId:   modelArtifactTypeId,
+		OpenAPIConverter:         &generated.OpenAPIToMLMDConverterImpl{},
+		MLMDConverter:            &generated.MLMDToOpenAPIConverterImpl{},
+		RegisteredModelTypeId:    registeredModelTypeId,
+		ModelVersionTypeId:       modelVersionTypeId,
+		ModelArtifactTypeId:      modelArtifactTypeId,
+		ServingEnvironmentTypeId: servingEnvironmentTypeId,
+		InferenceServiceTypeId:   inferenceServiceTypeId,
+		ServeModelTypeId:         serveModelTypeId,
 	}
 }
 
