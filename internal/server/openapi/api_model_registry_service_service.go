@@ -17,7 +17,6 @@ import (
 	"github.com/opendatahub-io/model-registry/internal/converter"
 	"github.com/opendatahub-io/model-registry/internal/converter/generated"
 	"github.com/opendatahub-io/model-registry/internal/core"
-	"github.com/opendatahub-io/model-registry/internal/core/mapper"
 	model "github.com/opendatahub-io/model-registry/internal/model/openapi"
 )
 
@@ -423,7 +422,7 @@ func (s *ModelRegistryServiceAPIService) GetModelArtifact(ctx context.Context, m
 func (s *ModelRegistryServiceAPIService) GetModelArtifacts(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
 	orderByString := string(orderBy)
 	sortOrderString := string(sortOrder)
-	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	pageSizeInt32, err := converter.StringToInt32(pageSize)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -459,7 +458,7 @@ func (s *ModelRegistryServiceAPIService) GetModelVersionArtifacts(ctx context.Co
 	// TODO externalID unused
 	orderByString := string(orderBy)
 	sortOrderString := string(sortOrder)
-	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	pageSizeInt32, err := converter.StringToInt32(pageSize)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -481,7 +480,7 @@ func (s *ModelRegistryServiceAPIService) GetModelVersionArtifacts(ctx context.Co
 func (s *ModelRegistryServiceAPIService) GetModelVersions(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
 	orderByString := string(orderBy)
 	sortOrderString := string(sortOrder)
-	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	pageSizeInt32, err := converter.StringToInt32(pageSize)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -517,7 +516,7 @@ func (s *ModelRegistryServiceAPIService) GetRegisteredModelVersions(ctx context.
 	// TODO externalID unused
 	orderByString := string(orderBy)
 	sortOrderString := string(sortOrder)
-	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	pageSizeInt32, err := converter.StringToInt32(pageSize)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -539,7 +538,7 @@ func (s *ModelRegistryServiceAPIService) GetRegisteredModelVersions(ctx context.
 func (s *ModelRegistryServiceAPIService) GetRegisteredModels(ctx context.Context, pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (ImplResponse, error) {
 	orderByString := string(orderBy)
 	sortOrderString := string(sortOrder)
-	pageSizeInt32, err := mapper.StringToInt32(pageSize)
+	pageSizeInt32, err := converter.StringToInt32(pageSize)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
