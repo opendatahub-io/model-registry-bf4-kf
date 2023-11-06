@@ -43,6 +43,7 @@ func runProxyServer(cmd *cobra.Command, args []string) error {
 		log.Fatalf("Error dialing connection to mlmd server %s: %v", mlmdAddr, err)
 		return err
 	}
+	defer conn.Close()
 	service, err := core.NewModelRegistryService(conn)
 	if err != nil {
 		log.Fatalf("Error creating core service: %v", err)
