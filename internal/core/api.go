@@ -90,7 +90,7 @@ type ModelRegistryApi interface {
 	GetInferenceServiceById(id string) (*openapi.InferenceService, error)
 
 	// GetInferenceServiceByParams find InferenceService instances that match the provided optional params
-	GetInferenceServiceByParams(name *string, externalId *string) (*openapi.InferenceService, error)
+	GetInferenceServiceByParams(name *string, parentResourceId *string, externalId *string) (*openapi.InferenceService, error)
 
 	// GetInferenceServices return all InferenceService properly ordered and sized based on listOptions param
 	// if servingEnvironmentId is provided, return all InferenceService instances belonging to a specific ServingEnvironment

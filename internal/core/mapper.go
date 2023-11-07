@@ -102,6 +102,20 @@ func (m *Mapper) MapFromServingEnvironment(servingEnvironment *openapi.ServingEn
 	return ctx, nil
 }
 
+func (m *Mapper) MapFromInferenceService(inferenceService *openapi.InferenceService, servingEnvironmentId string, servingEnvironmentName *string) (*proto.Context, error) {
+	ctx, err := m.OpenAPIConverter.ConvertInferenceService(&converter.OpenAPIModelWrapper[openapi.InferenceService]{
+		TypeId:           m.InferenceServiceTypeId,
+		Model:            inferenceService,
+		ParentResourceId: &servingEnvironmentId,
+		ModelName:        servingEnvironmentName, // TODO: revise with Andrea, this could maybe be called `ParentResourceName`
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ctx, nil
+}
+
 // Utilities for MLMD --> OpenAPI mapping, make use of generated Converters
 
 func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredModel, error) {
