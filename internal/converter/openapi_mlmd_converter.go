@@ -65,6 +65,7 @@ type OpenAPIToMLMDConverter interface {
 	ConvertServingEnvironment(source *OpenAPIModelWrapper[openapi.ServingEnvironment]) (*proto.Context, error)
 
 	// goverter:autoMap Model
+	// goverter:map . Name | MapInferenceServiceName
 	// goverter:map Model Type | MapInferenceServiceType
 	// goverter:map Model Properties | MapInferenceServiceProperties
 	// goverter:ignore state sizeCache unknownFields SystemMetadata CreateTimeSinceEpoch LastUpdateTimeSinceEpoch

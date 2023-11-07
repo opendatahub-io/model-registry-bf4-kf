@@ -24,29 +24,20 @@ func (c *OpenAPIToMLMDConverterImpl) ConvertInferenceService(source *converter.O
 			return nil, fmt.Errorf("error setting field Id: %w", err)
 		}
 		protoContext.Id = pInt64
+		protoContext.Name = converter.MapInferenceServiceName(source)
+		pInt642 := (*source).TypeId
+		protoContext.TypeId = &pInt642
+		protoContext.Type = converter.MapInferenceServiceType((*source).Model)
 		var pString2 *string
 		if (*source).Model != nil {
-			pString2 = (*source).Model.Name
+			pString2 = (*source).Model.ExternalID
 		}
 		var pString3 *string
 		if pString2 != nil {
 			xstring := *pString2
 			pString3 = &xstring
 		}
-		protoContext.Name = pString3
-		pInt642 := (*source).TypeId
-		protoContext.TypeId = &pInt642
-		protoContext.Type = converter.MapInferenceServiceType((*source).Model)
-		var pString4 *string
-		if (*source).Model != nil {
-			pString4 = (*source).Model.ExternalID
-		}
-		var pString5 *string
-		if pString4 != nil {
-			xstring2 := *pString4
-			pString5 = &xstring2
-		}
-		protoContext.ExternalId = pString5
+		protoContext.ExternalId = pString3
 		mapStringPProtoValue, err := converter.MapInferenceServiceProperties((*source).Model)
 		if err != nil {
 			return nil, fmt.Errorf("error setting field Properties: %w", err)

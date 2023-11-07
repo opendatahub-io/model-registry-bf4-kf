@@ -107,7 +107,6 @@ func (m *Mapper) MapFromInferenceService(inferenceService *openapi.InferenceServ
 		TypeId:           m.InferenceServiceTypeId,
 		Model:            inferenceService,
 		ParentResourceId: &servingEnvironmentId,
-		ModelName:        servingEnvironmentName, // TODO: revise with Andrea, this could maybe be called `ParentResourceName`
 	})
 	if err != nil {
 		return nil, err

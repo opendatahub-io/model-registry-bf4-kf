@@ -352,6 +352,13 @@ func MapInferenceServiceProperties(source *openapi.InferenceService) (map[string
 	return props, nil
 }
 
+// MapInferenceServiceName maps the user-provided name into MLMD one, i.e., prefixing it with
+// either the parent resource id or a generated uuid
+// ref: > InferenceService context is actually a child of ServingEnvironment parent context
+func MapInferenceServiceName(source *OpenAPIModelWrapper[openapi.InferenceService]) *string {
+	return of(PrefixWhenOwned(source.ParentResourceId, *(*source).Model.Name))
+}
+
 // SERVE MODEL
 
 // MapServeModelType return ServeModel corresponding MLMD context type

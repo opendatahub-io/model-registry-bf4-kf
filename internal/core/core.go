@@ -896,6 +896,11 @@ func (serv *modelRegistryService) UpsertInferenceService(inferenceService *opena
 		}
 	}
 
+	// validate RegisteredModelId is also valid
+	if _, err := serv.GetRegisteredModelById(inferenceService.RegisteredModelId); err != nil {
+		return nil, err
+	}
+
 	// if already existing assure the name is the same
 	if existing != nil && inferenceService.Name == nil {
 		// user did not provide it

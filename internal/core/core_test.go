@@ -37,6 +37,7 @@ var (
 	// entity under test
 	entityName        string
 	entityExternalId  string
+	entityExternalId2 string
 	entityDescription string
 )
 
@@ -59,6 +60,7 @@ func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataSt
 	artifactUri = "path/to/model/v1"
 	entityName = "MyAwesomeEntity"
 	entityExternalId = "entityExternalID"
+	entityExternalId2 = "entityExternalID2"
 	entityDescription = "lorem ipsum entity description"
 
 	conn, client, teardown := testutils.SetupMLMDTestContainer(t)
@@ -100,6 +102,36 @@ func registerModel(assertion *assert.Assertions, service ModelRegistryApi, overr
 	assertion.Nilf(err, "error creating registered model: %v", err)
 
 	return *createdModel.Id
+}
+
+// utility function that register a new simple ServingEnvironment and return its ID
+func registerServingEnvironment(assertion *assert.Assertions, service ModelRegistryApi, overrideName *string, overrideExternalId *string) string {
+	eut := &openapi.ServingEnvironment{
+		Name:        &entityName,
+		ExternalID:  &entityExternalId,
+		Description: &entityDescription,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &owner,
+				},
+			},
+		},
+	}
+
+	if overrideName != nil {
+		eut.Name = overrideName
+	}
+
+	if overrideExternalId != nil {
+		eut.ExternalID = overrideExternalId
+	}
+
+	// test
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	return *createdEntity.Id
 }
 
 // utility function that register a new simple model and return its ID
@@ -1847,4 +1879,91 @@ func TestGetServingEnvironmentsWithPageSize(t *testing.T) {
 	assertion.Equal("", truncatedList.NextPageToken, "next page token should be empty as list item returned")
 	assertion.Equal(*secondEntity.Id, *truncatedList.Items[0].Id)
 	assertion.Equal(*thirdEntity.Id, *truncatedList.Items[1].Id)
+}
+
+// INFERENCE SERVICE
+
+func TestCreateInferenceService(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	byId, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*createdEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+	assertion.Equal(1, len(byId.Contexts), "there should be just one context saved in mlmd")
+
+	assertion.Equal(*createdEntityId, *byId.Contexts[0].Id, "returned id should match the mlmd one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, entityName), *byId.Contexts[0].Name, "saved name should match the provided one")
+	assertion.Equal(entityExternalId2, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
+	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
+	assertion.Equal(entityDescription, byId.Contexts[0].Properties["description"].GetStringValue(), "saved description should match the provided one")
+	assertion.Equalf(*inferenceServiceTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *inferenceServiceTypeName)
+
+	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
+	assertion.Equal(3, len(getAllResp.Contexts), "there should be 3 contexts (RegisteredModel, ServingEnvironment, InferenceService) saved in mlmd")
+}
+
+func TestCreateInferenceServiceFailure(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		ServingEnvironmentId: "9999",
+		RegisteredModelId:    "9998",
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	_, err := service.UpsertInferenceService(eut)
+	assertion.NotNil(err)
+	assertion.Equal("no serving environment found for id 9999", err.Error())
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	eut.ServingEnvironmentId = parentResourceId
+
+	_, err = service.UpsertInferenceService(eut)
+	assertion.NotNil(err)
+	assertion.Equal("no registered model found for id 9998", err.Error())
 }
