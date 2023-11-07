@@ -85,7 +85,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 				"description":      proto.PropertyType_STRING,
 				"model_version_id": proto.PropertyType_INT,
 				// we could remove this as we will use ParentContext to keep track of this association
-				"registred_model_id":     proto.PropertyType_INT,
+				"registered_model_id":    proto.PropertyType_INT,
 				"serving_environment_id": proto.PropertyType_INT,
 			},
 		},
@@ -869,18 +869,17 @@ func (serv *modelRegistryService) GetServingEnvironments(listOptions ListOptions
 
 // INFERENCE SERVICE
 
-func (serv *modelRegistryService) UpsertInferenceService(inferenceService *openapi.InferenceService, parentResourceId *string) (*openapi.InferenceService, error) {
+func (serv *modelRegistryService) UpsertInferenceService(inferenceService *openapi.InferenceService) (*openapi.InferenceService, error) {
 	var err error
 	var existing *openapi.InferenceService
 	var servingEnvironment *openapi.ServingEnvironment
+	// for InferenceService, is part of model payload.
+	parentResourceId := inferenceService.ServingEnvironmentId
 
 	if inferenceService.Id == nil {
 		// create
 		glog.Info("Creating new InferenceService")
-		if parentResourceId == nil {
-			return nil, fmt.Errorf("missing parentResourceId, cannot create InferenceService without ServingEnvironment")
-		}
-		servingEnvironment, err = serv.GetServingEnvironmentById(*parentResourceId)
+		servingEnvironment, err = serv.GetServingEnvironmentById(parentResourceId)
 		if err != nil {
 			return nil, err
 		}
@@ -920,7 +919,7 @@ func (serv *modelRegistryService) UpsertInferenceService(inferenceService *opena
 
 	inferenceServiceId := &protoCtxResp.ContextIds[0]
 	if inferenceService.Id == nil {
-		servingEnvironmentId, err := converter.StringToInt64(inferenceService.Id)
+		servingEnvironmentId, err := converter.StringToInt64(servingEnvironment.Id)
 		if err != nil {
 			return nil, err
 		}
