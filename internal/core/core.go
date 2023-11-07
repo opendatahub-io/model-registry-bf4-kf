@@ -728,20 +728,143 @@ func (serv *modelRegistryService) GetModelArtifacts(listOptions ListOptions, par
 
 // SERVING ENVIRONMENT
 
-func (serv *modelRegistryService) UpsertServingEnvironment(registeredModel *openapi.ServingEnvironment) (*openapi.ServingEnvironment, error) {
-	panic("method not yet implemented")
+func (serv *modelRegistryService) UpsertServingEnvironment(servingEnvironment *openapi.ServingEnvironment) (*openapi.ServingEnvironment, error) {
+	var err error
+	var existing *openapi.ServingEnvironment
+
+	if servingEnvironment.Id == nil {
+		glog.Info("Creating new serving environment")
+	} else {
+		glog.Info("Updating serving environment %s", *servingEnvironment.Id)
+		existing, err = serv.GetServingEnvironmentById(*servingEnvironment.Id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// if already existing assure the name is the same
+	if existing != nil && servingEnvironment.Name == nil {
+		// user did not provide it
+		// need to set it to avoid mlmd error "context name should not be empty"
+		servingEnvironment.Name = existing.Name
+	}
+
+	protoCtx, err := serv.mapper.MapFromServingEnvironment(servingEnvironment)
+	if err != nil {
+		return nil, err
+	}
+
+	protoCtxResp, err := serv.mlmdClient.PutContexts(context.Background(), &proto.PutContextsRequest{
+		Contexts: []*proto.Context{
+			protoCtx,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	idAsString := converter.Int64ToString(&protoCtxResp.ContextIds[0])
+	openapiModel, err := serv.GetServingEnvironmentById(*idAsString)
+	if err != nil {
+		return nil, err
+	}
+
+	return openapiModel, nil
 }
 
 func (serv *modelRegistryService) GetServingEnvironmentById(id string) (*openapi.ServingEnvironment, error) {
-	panic("method not yet implemented")
+	glog.Info("Getting serving environment %s", id)
+
+	idAsInt, err := converter.StringToInt64(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	getByIdResp, err := serv.mlmdClient.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{*idAsInt},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(getByIdResp.Contexts) > 1 {
+		return nil, fmt.Errorf("multiple serving environments found for id %s", id)
+	}
+
+	if len(getByIdResp.Contexts) == 0 {
+		return nil, fmt.Errorf("no serving environment found for id %s", id)
+	}
+
+	openapiModel, err := serv.mapper.MapToServingEnvironment(getByIdResp.Contexts[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return openapiModel, nil
 }
 
 func (serv *modelRegistryService) GetServingEnvironmentByParams(name *string, externalId *string) (*openapi.ServingEnvironment, error) {
-	panic("method not yet implemented")
+	glog.Info("Getting serving environment by params name=%v, externalId=%v", name, externalId)
+
+	filterQuery := ""
+	if name != nil {
+		filterQuery = fmt.Sprintf("name = \"%s\"", *name)
+	} else if externalId != nil {
+		filterQuery = fmt.Sprintf("external_id = \"%s\"", *externalId)
+	} else {
+		return nil, fmt.Errorf("invalid parameters call, supply either name or externalId")
+	}
+
+	getByParamsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
+		TypeName: servingEnvironmentTypeName,
+		Options: &proto.ListOperationOptions{
+			FilterQuery: &filterQuery,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(getByParamsResp.Contexts) != 1 {
+		return nil, fmt.Errorf("could not find exactly one Context matching criteria: %v", getByParamsResp.Contexts)
+	}
+
+	openapiModel, err := serv.mapper.MapToServingEnvironment(getByParamsResp.Contexts[0])
+	if err != nil {
+		return nil, err
+	}
+	return openapiModel, nil
 }
 
 func (serv *modelRegistryService) GetServingEnvironments(listOptions ListOptions) (*openapi.ServingEnvironmentList, error) {
-	panic("method not yet implemented")
+	listOperationOptions, err := BuildListOperationOptions(listOptions)
+	if err != nil {
+		return nil, err
+	}
+	contextsResp, err := serv.mlmdClient.GetContextsByType(context.Background(), &proto.GetContextsByTypeRequest{
+		TypeName: servingEnvironmentTypeName,
+		Options:  listOperationOptions,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	results := []openapi.ServingEnvironment{}
+	for _, c := range contextsResp.Contexts {
+		mapped, err := serv.mapper.MapToServingEnvironment(c)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, *mapped)
+	}
+
+	toReturn := openapi.ServingEnvironmentList{
+		NextPageToken: zeroIfNil(contextsResp.NextPageToken),
+		PageSize:      zeroIfNil(listOptions.PageSize),
+		Size:          int32(len(results)),
+		Items:         results,
+	}
+	return &toReturn, nil
 }
 
 // INFERENCE SERVICE

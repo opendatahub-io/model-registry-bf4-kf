@@ -34,6 +34,10 @@ var (
 	artifactExtId       string
 	artifactState       string
 	artifactUri         string
+	// entity under test
+	entityName        string
+	entityExternalId  string
+	entityDescription string
 )
 
 func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataStoreServiceClient, func(t *testing.T)) {
@@ -53,6 +57,9 @@ func setup(t *testing.T) (*assert.Assertions, *grpc.ClientConn, proto.MetadataSt
 	artifactExtId = "org.myawesomemodel@v1:pickle"
 	artifactState = "LIVE"
 	artifactUri = "path/to/model/v1"
+	entityName = "MyAwesomeEntity"
+	entityExternalId = "entityExternalID"
+	entityDescription = "lorem ipsum entity description"
 
 	conn, client, teardown := testutils.SetupMLMDTestContainer(t)
 	return assert.New(t), conn, client, teardown
@@ -1430,4 +1437,414 @@ func TestGetModelArtifacts(t *testing.T) {
 	assertion.Equal(*converter.Int64ToString(createdArtifactId1), *getAllByModelVersion.Items[2].Id)
 	assertion.Equal(*converter.Int64ToString(createdArtifactId2), *getAllByModelVersion.Items[1].Id)
 	assertion.Equal(*converter.Int64ToString(createdArtifactId3), *getAllByModelVersion.Items[0].Id)
+}
+
+// SERVING ENVIRONMENT
+
+func TestCreateServingEnvironment(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:        &entityName,
+		ExternalID:  &entityExternalId,
+		Description: &entityDescription,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &owner,
+				},
+			},
+		},
+	}
+
+	// test
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+
+	// checks
+	assertion.Nilf(err, "error creating uut: %v", err)
+	assertion.NotNilf(createdEntity.Id, "created uut should not have nil Id")
+
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{*createdEntityId},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+
+	ctx := ctxById.Contexts[0]
+	ctxId := converter.Int64ToString(ctx.Id)
+	assertion.Equal(*createdEntity.Id, *ctxId, "returned id should match the mlmd one")
+	assertion.Equal(entityName, *ctx.Name, "saved name should match the provided one")
+	assertion.Equal(entityExternalId, *ctx.ExternalId, "saved external id should match the provided one")
+	assertion.Equal(entityDescription, ctx.Properties["description"].GetStringValue(), "saved description should match the provided one")
+	assertion.Equal(owner, ctx.CustomProperties["owner"].GetStringValue(), "saved owner custom property should match the provided one")
+
+	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
+	assertion.Equal(1, len(getAllResp.Contexts), "there should be just one context saved in mlmd")
+}
+
+func TestUpdateServingEnvironment(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &owner,
+				},
+			},
+		},
+	}
+
+	// test
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+
+	// checks
+	assertion.Nilf(err, "error creating uut: %v", err)
+	assertion.NotNilf(createdEntity.Id, "created uut should not have nil Id")
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	// checks created entity matches original one except for Id
+	assertion.Equal(*eut.Name, *createdEntity.Name, "returned entity should match the original one")
+	assertion.Equal(*eut.ExternalID, *createdEntity.ExternalID, "returned entity external id should match the original one")
+	assertion.Equal(*eut.CustomProperties, *createdEntity.CustomProperties, "returned entity custom props should match the original one")
+
+	// update existing entity
+	newExternalId := "newExternalId"
+	newOwner := "newOwner"
+
+	createdEntity.ExternalID = &newExternalId
+	(*createdEntity.CustomProperties)["owner"] = openapi.MetadataValue{
+		MetadataStringValue: &openapi.MetadataStringValue{
+			StringValue: &newOwner,
+		},
+	}
+
+	// update the entity
+	createdEntity, err = service.UpsertServingEnvironment(createdEntity)
+	assertion.Nilf(err, "error creating uut: %v", err)
+
+	// still one expected MLMD type
+	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
+	assertion.Equal(1, len(getAllResp.Contexts), "there should be just one context saved in mlmd")
+
+	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{*createdEntityId},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+
+	ctx := ctxById.Contexts[0]
+	ctxId := converter.Int64ToString(ctx.Id)
+	assertion.Equal(*createdEntity.Id, *ctxId, "returned entity id should match the mlmd one")
+	assertion.Equal(entityName, *ctx.Name, "saved entity name should match the provided one")
+	assertion.Equal(newExternalId, *ctx.ExternalId, "saved external id should match the provided one")
+	assertion.Equal(newOwner, ctx.CustomProperties["owner"].GetStringValue(), "saved owner custom property should match the provided one")
+
+	// update the entity under test, keeping nil name
+	newExternalId = "newNewExternalId"
+	createdEntity.ExternalID = &newExternalId
+	createdEntity.Name = nil
+	createdEntity, err = service.UpsertServingEnvironment(createdEntity)
+	assertion.Nilf(err, "error creating entity: %v", err)
+
+	// still one registered entity
+	getAllResp, err = client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
+	assertion.Equal(1, len(getAllResp.Contexts), "there should be just one context saved in mlmd")
+
+	ctxById, err = client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{*createdEntityId},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+
+	ctx = ctxById.Contexts[0]
+	ctxId = converter.Int64ToString(ctx.Id)
+	assertion.Equal(*createdEntity.Id, *ctxId, "returned entity id should match the mlmd one")
+	assertion.Equal(entityName, *ctx.Name, "saved entity name should match the provided one")
+	assertion.Equal(newExternalId, *ctx.ExternalId, "saved external id should match the provided one")
+	assertion.Equal(newOwner, ctx.CustomProperties["owner"].GetStringValue(), "saved owner custom property should match the provided one")
+}
+
+func TestGetServingEnvironmentById(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new entity
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &owner,
+				},
+			},
+		},
+	}
+
+	// test
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+
+	// checks
+	assertion.Nilf(err, "error creating eut: %v", err)
+
+	getEntityById, err := service.GetServingEnvironmentById(*createdEntity.Id)
+	assertion.Nilf(err, "error getting eut by id %s: %v", *createdEntity.Id, err)
+
+	// checks created entity matches original one except for Id
+	assertion.Equal(*eut.Name, *getEntityById.Name, "saved name should match the original one")
+	assertion.Equal(*eut.ExternalID, *getEntityById.ExternalID, "saved external id should match the original one")
+	assertion.Equal(*eut.CustomProperties, *getEntityById.CustomProperties, "saved custom props should match the original one")
+}
+
+func TestGetServingEnvironmentByParamsName(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	byName, err := service.GetServingEnvironmentByParams(&entityName, nil)
+	assertion.Nilf(err, "error getting ServingEnvironment by name: %v", err)
+
+	assertion.Equalf(*createdEntity.Id, *byName.Id, "the returned entity id should match the retrieved by name")
+}
+
+func TestGetServingEnvironmentByParamsExternalId(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	createdEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	byName, err := service.GetServingEnvironmentByParams(nil, &entityExternalId)
+	assertion.Nilf(err, "error getting ServingEnvironment by external id: %v", err)
+
+	assertion.Equalf(*createdEntity.Id, *byName.Id, "the returned entity id should match the retrieved by name")
+}
+
+func TestGetServingEnvironmentByEmptyParams(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	_, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	_, err = service.GetServingEnvironmentByParams(nil, nil)
+	assertion.NotNil(err)
+	assertion.Equal("invalid parameters call, supply either name or externalId", err.Error())
+}
+
+func TestGetServingEnvironmentsOrderedById(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	orderBy := "ID"
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	_, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	newName := "Pricingentity2"
+	newExternalId := "myExternalId2"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	_, err = service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	newName = "Pricingentity3"
+	newExternalId = "myExternalId3"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	_, err = service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	orderedById, err := service.GetServingEnvironments(ListOptions{
+		OrderBy:   &orderBy,
+		SortOrder: &ascOrderDirection,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironment: %v", err)
+
+	assertion.Equal(3, int(orderedById.Size))
+	for i := 0; i < int(orderedById.Size)-1; i++ {
+		assertion.Less(*orderedById.Items[i].Id, *orderedById.Items[i+1].Id)
+	}
+
+	orderedById, err = service.GetServingEnvironments(ListOptions{
+		OrderBy:   &orderBy,
+		SortOrder: &descOrderDirection,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironments: %v", err)
+
+	assertion.Equal(3, int(orderedById.Size))
+	for i := 0; i < int(orderedById.Size)-1; i++ {
+		assertion.Greater(*orderedById.Items[i].Id, *orderedById.Items[i+1].Id)
+	}
+}
+
+func TestGetServingEnvironmentsOrderedByLastUpdate(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	orderBy := "LAST_UPDATE_TIME"
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	firstEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	newName := "Pricingentity2"
+	newExternalId := "myExternalId2"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	secondEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	newName = "Pricingentity3"
+	newExternalId = "myExternalId3"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	thirdEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	// update second entity
+	secondEntity.ExternalID = nil
+	_, err = service.UpsertServingEnvironment(secondEntity)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	orderedById, err := service.GetServingEnvironments(ListOptions{
+		OrderBy:   &orderBy,
+		SortOrder: &ascOrderDirection,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironments: %v", err)
+
+	assertion.Equal(3, int(orderedById.Size))
+	assertion.Equal(*firstEntity.Id, *orderedById.Items[0].Id)
+	assertion.Equal(*thirdEntity.Id, *orderedById.Items[1].Id)
+	assertion.Equal(*secondEntity.Id, *orderedById.Items[2].Id)
+
+	orderedById, err = service.GetServingEnvironments(ListOptions{
+		OrderBy:   &orderBy,
+		SortOrder: &descOrderDirection,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironments: %v", err)
+
+	assertion.Equal(3, int(orderedById.Size))
+	assertion.Equal(*secondEntity.Id, *orderedById.Items[0].Id)
+	assertion.Equal(*thirdEntity.Id, *orderedById.Items[1].Id)
+	assertion.Equal(*firstEntity.Id, *orderedById.Items[2].Id)
+}
+
+func TestGetServingEnvironmentsWithPageSize(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	pageSize := int32(1)
+	pageSize2 := int32(2)
+	entityName := "Pricingentity1"
+	entityExternalId := "myExternalId1"
+
+	// register a new ServingEnvironment
+	eut := &openapi.ServingEnvironment{
+		Name:       &entityName,
+		ExternalID: &entityExternalId,
+	}
+
+	firstEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating registered entity: %v", err)
+
+	newName := "Pricingentity2"
+	newExternalId := "myExternalId2"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	secondEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	newName = "Pricingentity3"
+	newExternalId = "myExternalId3"
+	eut.Name = &newName
+	eut.ExternalID = &newExternalId
+	thirdEntity, err := service.UpsertServingEnvironment(eut)
+	assertion.Nilf(err, "error creating ServingEnvironment: %v", err)
+
+	truncatedList, err := service.GetServingEnvironments(ListOptions{
+		PageSize: &pageSize,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironments: %v", err)
+
+	assertion.Equal(1, int(truncatedList.Size))
+	assertion.NotEqual("", truncatedList.NextPageToken, "next page token should not be empty")
+	assertion.Equal(*firstEntity.Id, *truncatedList.Items[0].Id)
+
+	truncatedList, err = service.GetServingEnvironments(ListOptions{
+		PageSize:      &pageSize2,
+		NextPageToken: &truncatedList.NextPageToken,
+	})
+	assertion.Nilf(err, "error getting ServingEnvironments: %v", err)
+
+	assertion.Equal(2, int(truncatedList.Size))
+	assertion.Equal("", truncatedList.NextPageToken, "next page token should be empty as list item returned")
+	assertion.Equal(*secondEntity.Id, *truncatedList.Items[0].Id)
+	assertion.Equal(*thirdEntity.Id, *truncatedList.Items[1].Id)
 }
