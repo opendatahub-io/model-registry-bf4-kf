@@ -169,3 +169,14 @@ func MapPropertyRegisteredModelId(properties map[string]*proto.Value) string {
 func MapPropertyServingEnvironmentId(properties map[string]*proto.Value) string {
 	return MapIntPropertyAsValue(properties, "serving_environment_id")
 }
+
+// SERVE MODEL
+
+func MapMLMDServeModelLastKnownState(source *proto.Execution_State) *openapi.ExecutionState {
+	if source == nil {
+		return nil
+	}
+
+	state := source.String()
+	return (*openapi.ExecutionState)(&state)
+}

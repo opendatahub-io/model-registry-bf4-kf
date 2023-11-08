@@ -85,7 +85,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 				"description":         proto.PropertyType_STRING,
 				"model_version_id":    proto.PropertyType_INT,
 				"registered_model_id": proto.PropertyType_INT,
-				// TODO: check with Andrea, my understanding is parent/child is ownership of ServingEnvironment/InferenceService (moving comment down 1 line for serving_environment_id)
+				// TODO: check with Andrea, my understanding is parent/child is only for ownership of ServingEnvironment/InferenceService (moving comment down 1 line for serving_environment_id)
 				// we could remove this as we will use ParentContext to keep track of this association
 				"serving_environment_id": proto.PropertyType_INT,
 			},
@@ -97,6 +97,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 			Name: serveModelTypeName,
 			Properties: map[string]proto.PropertyType{
 				"description": proto.PropertyType_STRING,
+				// TODO: check with Andrea, my understanding is parent/child is only for ownership of InferenceService/ServeModel via MLMD Association (Execution ServeModel --> Context InferenceService)
 				// we could remove this as we will use ParentContext to keep track of this association
 				"model_version_id": proto.PropertyType_INT,
 			},
@@ -582,7 +583,7 @@ func (serv *modelRegistryService) UpsertModelArtifact(modelArtifact *openapi.Mod
 		return nil, err
 	}
 
-	// add explicit association between artifacts and model version
+	// add explicit Attribution between Artifact and ModelVersion
 	if parentResourceId != nil && modelArtifact.Id == nil {
 		modelVersionId, err := converter.StringToInt64(parentResourceId)
 		if err != nil {
@@ -1080,16 +1081,196 @@ func (serv *modelRegistryService) GetInferenceServices(listOptions ListOptions, 
 
 // SERVE MODEL
 
-func (serv *modelRegistryService) UpsertServeModel(registeredModel *openapi.ServeModel, inferenceServiceId *string) (*openapi.ServeModel, error) {
-	panic("method not yet implemented")
+func (serv *modelRegistryService) UpsertServeModel(serveModel *openapi.ServeModel, parentResourceId *string) (*openapi.ServeModel, error) {
+	var err error
+	var existing *openapi.ServeModel
+
+	if serveModel.Id == nil {
+		// create
+		glog.Info("Creating new ServeModel")
+		if parentResourceId == nil {
+			return nil, fmt.Errorf("missing parentResourceId, cannot create ServeModel without parent resource InferenceService")
+		}
+		_, err = serv.GetInferenceServiceById(*parentResourceId)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// update
+		glog.Info("Updating ServeModel %s", *serveModel.Id)
+		existing, err = serv.GetServeModelById(*serveModel.Id)
+		if err != nil {
+			return nil, err
+		}
+		_, err = serv.getInferenceServiceByServeModel(*serveModel.Id)
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = serv.GetModelVersionById(serveModel.ModelVersionId)
+	if err != nil {
+		return nil, err
+	}
+
+	// if already existing assure the name is the same
+	if existing != nil && serveModel.Name == nil {
+		// user did not provide it
+		// need to set it to avoid mlmd error "artifact name should not be empty"
+		serveModel.Name = existing.Name
+	}
+
+	execution, err := serv.mapper.MapFromServeModel(serveModel, *parentResourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	executionsResp, err := serv.mlmdClient.PutExecutions(context.Background(), &proto.PutExecutionsRequest{
+		Executions: []*proto.Execution{execution},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// add explicit Association between ServeModel and InferenceService
+	if parentResourceId != nil && serveModel.Id == nil {
+		inferenceServiceId, err := converter.StringToInt64(parentResourceId)
+		if err != nil {
+			return nil, err
+		}
+		associations := []*proto.Association{}
+		for _, a := range executionsResp.ExecutionIds {
+			associations = append(associations, &proto.Association{
+				ContextId:   inferenceServiceId,
+				ExecutionId: &a,
+			})
+		}
+		_, err = serv.mlmdClient.PutAttributionsAndAssociations(context.Background(), &proto.PutAttributionsAndAssociationsRequest{
+			Attributions: make([]*proto.Attribution, 0),
+			Associations: associations,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	idAsString := converter.Int64ToString(&executionsResp.ExecutionIds[0])
+	mapped, err := serv.GetServeModelById(*idAsString)
+	if err != nil {
+		return nil, err
+	}
+	return mapped, nil
+}
+
+func (serv *modelRegistryService) getInferenceServiceByServeModel(id string) (*openapi.InferenceService, error) {
+	glog.Info("Getting InferenceService for ServeModel %s", id)
+
+	idAsInt, err := converter.StringToInt64(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	getParentResp, err := serv.mlmdClient.GetContextsByExecution(context.Background(), &proto.GetContextsByExecutionRequest{
+		ExecutionId: idAsInt,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(getParentResp.Contexts) > 1 {
+		return nil, fmt.Errorf("multiple InferenceService found for ServeModel %s", id)
+	}
+
+	if len(getParentResp.Contexts) == 0 {
+		return nil, fmt.Errorf("no InferenceService found for ServeModel %s", id)
+	}
+
+	toReturn, err := serv.mapper.MapToInferenceService(getParentResp.Contexts[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return toReturn, nil
 }
 
 func (serv *modelRegistryService) GetServeModelById(id string) (*openapi.ServeModel, error) {
-	panic("method not yet implemented")
+	idAsInt, err := converter.StringToInt64(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	executionsResp, err := serv.mlmdClient.GetExecutionsByID(context.Background(), &proto.GetExecutionsByIDRequest{
+		ExecutionIds: []int64{int64(*idAsInt)},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(executionsResp.Executions) > 1 {
+		return nil, fmt.Errorf("multiple ServeModels found for id %s", id)
+	}
+
+	if len(executionsResp.Executions) == 0 {
+		return nil, fmt.Errorf("no ServeModel found for id %s", id)
+	}
+
+	result, err := serv.mapper.MapToServeModel(executionsResp.Executions[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
-func (serv *modelRegistryService) GetServeModels(listOptions ListOptions, inferenceServiceId *string) (*openapi.ServeModelList, error) {
-	panic("method not yet implemented")
+func (serv *modelRegistryService) GetServeModels(listOptions ListOptions, parentResourceId *string) (*openapi.ServeModelList, error) {
+	listOperationOptions, err := BuildListOperationOptions(listOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	var executions []*proto.Execution
+	var nextPageToken *string
+	if parentResourceId != nil {
+		ctxId, err := converter.StringToInt64(parentResourceId)
+		if err != nil {
+			return nil, err
+		}
+		executionsResp, err := serv.mlmdClient.GetExecutionsByContext(context.Background(), &proto.GetExecutionsByContextRequest{
+			ContextId: ctxId,
+			Options:   listOperationOptions,
+		})
+		if err != nil {
+			return nil, err
+		}
+		executions = executionsResp.Executions
+		nextPageToken = executionsResp.NextPageToken
+	} else {
+		executionsResp, err := serv.mlmdClient.GetExecutionsByType(context.Background(), &proto.GetExecutionsByTypeRequest{
+			TypeName: modelArtifactTypeName,
+			Options:  listOperationOptions,
+		})
+		if err != nil {
+			return nil, err
+		}
+		executions = executionsResp.Executions
+		nextPageToken = executionsResp.NextPageToken
+	}
+
+	results := []openapi.ServeModel{}
+	for _, a := range executions {
+		mapped, err := serv.mapper.MapToServeModel(a)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, *mapped)
+	}
+
+	toReturn := openapi.ServeModelList{
+		NextPageToken: zeroIfNil(nextPageToken),
+		PageSize:      zeroIfNil(listOptions.PageSize),
+		Size:          int32(len(results)),
+		Items:         results,
+	}
+	return &toReturn, nil
 }
 
 // of returns a pointer to the provided literal/const input

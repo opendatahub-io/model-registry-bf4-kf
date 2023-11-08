@@ -72,6 +72,7 @@ type OpenAPIToMLMDConverter interface {
 	ConvertInferenceService(source *OpenAPIModelWrapper[openapi.InferenceService]) (*proto.Context, error)
 
 	// goverter:autoMap Model
+	// goverter:map . Name | MapServeModelName
 	// goverter:map Model Type | MapServeModelType
 	// goverter:map Model Properties | MapServeModelProperties
 	// goverter:map Model.LastKnownState LastKnownState | MapLastKnownState

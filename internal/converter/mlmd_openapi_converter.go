@@ -47,6 +47,6 @@ type MLMDToOpenAPIConverter interface {
 	// goverter:map Name | MapNameFromOwned
 	// goverter:map Properties Description | MapDescription
 	// goverter:map Properties ModelVersionId | MapPropertyModelVersionIdAsValue
-	// goverter:ignore LastKnownState
+	// goverter:map LastKnownState | MapMLMDServeModelLastKnownState
 	ConvertServeModel(source *proto.Execution) (*openapi.ServeModel, error)
 }

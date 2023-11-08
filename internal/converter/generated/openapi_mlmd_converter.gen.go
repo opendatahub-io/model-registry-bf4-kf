@@ -232,29 +232,20 @@ func (c *OpenAPIToMLMDConverterImpl) ConvertServeModel(source *converter.OpenAPI
 			return nil, fmt.Errorf("error setting field Id: %w", err)
 		}
 		protoExecution.Id = pInt64
+		protoExecution.Name = converter.MapServeModelName(source)
+		pInt642 := (*source).TypeId
+		protoExecution.TypeId = &pInt642
+		protoExecution.Type = converter.MapServeModelType((*source).Model)
 		var pString2 *string
 		if (*source).Model != nil {
-			pString2 = (*source).Model.Name
+			pString2 = (*source).Model.ExternalID
 		}
 		var pString3 *string
 		if pString2 != nil {
 			xstring := *pString2
 			pString3 = &xstring
 		}
-		protoExecution.Name = pString3
-		pInt642 := (*source).TypeId
-		protoExecution.TypeId = &pInt642
-		protoExecution.Type = converter.MapServeModelType((*source).Model)
-		var pString4 *string
-		if (*source).Model != nil {
-			pString4 = (*source).Model.ExternalID
-		}
-		var pString5 *string
-		if pString4 != nil {
-			xstring2 := *pString4
-			pString5 = &xstring2
-		}
-		protoExecution.ExternalId = pString5
+		protoExecution.ExternalId = pString3
 		var pOpenapiExecutionState *openapi.ExecutionState
 		if (*source).Model != nil {
 			pOpenapiExecutionState = (*source).Model.LastKnownState

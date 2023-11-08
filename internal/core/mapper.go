@@ -115,6 +115,19 @@ func (m *Mapper) MapFromInferenceService(inferenceService *openapi.InferenceServ
 	return ctx, nil
 }
 
+func (m *Mapper) MapFromServeModel(serveModel *openapi.ServeModel, inferenceServiceId string) (*proto.Execution, error) {
+	ctx, err := m.OpenAPIConverter.ConvertServeModel(&converter.OpenAPIModelWrapper[openapi.ServeModel]{
+		TypeId:           m.ServeModelTypeId,
+		Model:            serveModel,
+		ParentResourceId: &inferenceServiceId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return ctx, nil
+}
+
 // Utilities for MLMD --> OpenAPI mapping, make use of generated Converters
 
 func (m *Mapper) MapToRegisteredModel(ctx *proto.Context) (*openapi.RegisteredModel, error) {

@@ -102,7 +102,7 @@ type ModelRegistryApi interface {
 	// UpsertServeModel create or update a serve model, the behavior follows the same
 	// approach used by MLMD gRPC api. If Id is provided update the entity otherwise create a new one.
 	// inferenceServiceId defines the InferenceService to be linked to the newly created ServeModel.
-	UpsertServeModel(registeredModel *openapi.ServeModel, inferenceServiceId *string) (*openapi.ServeModel, error)
+	UpsertServeModel(serveModel *openapi.ServeModel, inferenceServiceId *string) (*openapi.ServeModel, error)
 
 	// GetServeModelById retrieve ServeModel by id
 	GetServeModelById(id string) (*openapi.ServeModel, error)

@@ -137,6 +137,7 @@ func (c *MLMDToOpenAPIConverterImpl) ConvertServeModel(source *proto.Execution) 
 	var pOpenapiServeModel *openapi.ServeModel
 	if source != nil {
 		var openapiServeModel openapi.ServeModel
+		openapiServeModel.LastKnownState = converter.MapMLMDServeModelLastKnownState((*source).LastKnownState)
 		mapStringOpenapiMetadataValue, err := converter.MapMLMDCustomProperties((*source).CustomProperties)
 		if err != nil {
 			return nil, err

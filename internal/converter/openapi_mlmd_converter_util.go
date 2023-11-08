@@ -392,6 +392,20 @@ func MapServeModelProperties(source *openapi.ServeModel) (map[string]*proto.Valu
 	return props, nil
 }
 
+// MapServeModelName maps the user-provided name into MLMD one, i.e., prefixing it with
+// either the parent resource id or a generated uuid. If not provided, autogenerate the name
+// itself
+func MapServeModelName(source *OpenAPIModelWrapper[openapi.ServeModel]) *string {
+	// openapi.ServeModel is defined with optional name, so build arbitrary name for this artifact if missing
+	var serveModelName string
+	if (*source).Model.Name != nil {
+		serveModelName = *(*source).Model.Name
+	} else {
+		serveModelName = uuid.New().String()
+	}
+	return of(PrefixWhenOwned(source.ParentResourceId, serveModelName))
+}
+
 // MapLastKnownState maps LastKnownState field from ServeModel to Execution
 func MapLastKnownState(source *openapi.ExecutionState) (*proto.Execution_State, error) {
 	if source == nil {
