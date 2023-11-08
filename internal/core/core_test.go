@@ -1967,3 +1967,432 @@ func TestCreateInferenceServiceFailure(t *testing.T) {
 	assertion.NotNil(err)
 	assertion.Equal("no registered model found for id 9998", err.Error())
 }
+
+func TestUpdateInferenceService(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	newExternalId := "org.my_awesome_entity@v1"
+	newScore := 0.95
+
+	createdEntity.ExternalID = &newExternalId
+	(*createdEntity.CustomProperties)["score"] = openapi.MetadataValue{
+		MetadataDoubleValue: &openapi.MetadataDoubleValue{
+			DoubleValue: &newScore,
+		},
+	}
+
+	updatedEntity, err := service.UpsertInferenceService(createdEntity)
+	assertion.Nilf(err, "error updating new entity for %s: %v", registeredModelId, err)
+
+	updateEntityId, _ := converter.StringToInt64(updatedEntity.Id)
+	assertion.Equal(*createdEntityId, *updateEntityId, "created and updated should have same id")
+
+	byId, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*updateEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+	assertion.Equal(1, len(byId.Contexts), "there should be 1 context saved in mlmd by id")
+
+	assertion.Equal(*updateEntityId, *byId.Contexts[0].Id, "returned id should match the mlmd one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, *eut.Name), *byId.Contexts[0].Name, "saved name should match the provided one")
+	assertion.Equal(newExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
+	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
+	assertion.Equal(newScore, byId.Contexts[0].CustomProperties["score"].GetDoubleValue(), "saved score custom property should match the provided one")
+	assertion.Equalf(*inferenceServiceTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *inferenceServiceTypeName)
+
+	getAllResp, err := client.GetContexts(context.Background(), &proto.GetContextsRequest{})
+	assertion.Nilf(err, "error retrieving all contexts, not related to the test itself: %v", err)
+	fmt.Printf("%+v", getAllResp.Contexts)
+	assertion.Equal(3, len(getAllResp.Contexts), "there should be 3 contexts saved in mlmd")
+
+	// update with nil name
+	newExternalId = "org.my_awesome_entity_@v1"
+	updatedEntity.ExternalID = &newExternalId
+	updatedEntity.Name = nil
+	updatedEntity, err = service.UpsertInferenceService(updatedEntity)
+	assertion.Nilf(err, "error updating new model version for %s: %v", updateEntityId, err)
+
+	updateEntityId, _ = converter.StringToInt64(updatedEntity.Id)
+	assertion.Equal(*createdEntityId, *updateEntityId, "created and updated should have same id")
+
+	byId, err = client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*updateEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context by type and name, not related to the test itself: %v", err)
+	assertion.Equal(1, len(byId.Contexts), "there should be 1 context saved in mlmd by id")
+
+	assertion.Equal(*updateEntityId, *byId.Contexts[0].Id, "returned id should match the mlmd one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, *eut.Name), *byId.Contexts[0].Name, "saved name should match the provided one")
+	assertion.Equal(newExternalId, *byId.Contexts[0].ExternalId, "saved external id should match the provided one")
+	assertion.Equal(author, byId.Contexts[0].CustomProperties["author"].GetStringValue(), "saved author custom property should match the provided one")
+	assertion.Equal(newScore, byId.Contexts[0].CustomProperties["score"].GetDoubleValue(), "saved score custom property should match the provided one")
+	assertion.Equalf(*inferenceServiceTypeName, *byId.Contexts[0].Type, "saved context should be of type of %s", *inferenceServiceTypeName)
+}
+
+func TestUpdateInferenceServiceFailure(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+
+	newExternalId := "org.my_awesome_entity@v1"
+	newScore := 0.95
+
+	createdEntity.ExternalID = &newExternalId
+	(*createdEntity.CustomProperties)["score"] = openapi.MetadataValue{
+		MetadataDoubleValue: &openapi.MetadataDoubleValue{
+			DoubleValue: &newScore,
+		},
+	}
+
+	wrongId := "9999"
+	createdEntity.Id = &wrongId
+	_, err = service.UpsertInferenceService(createdEntity)
+	assertion.NotNil(err)
+	assertion.Equal(fmt.Sprintf("no InferenceService found for id %s", wrongId), err.Error())
+}
+
+func TestGetInferenceServiceById(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	getById, err := service.GetInferenceServiceById(*createdEntity.Id)
+	assertion.Nilf(err, "error getting model version with id %d", *createdEntityId)
+
+	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*createdEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context, not related to the test itself: %v", err)
+
+	ctx := ctxById.Contexts[0]
+	assertion.Equal(*getById.Id, *converter.Int64ToString(ctx.Id), "returned id should match the mlmd context one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, *getById.Name), *ctx.Name, "saved name should match the provided one")
+	assertion.Equal(*getById.ExternalID, *eut.ExternalID, "saved external id should match the provided one")
+	assertion.Equal(*(*getById.CustomProperties)["author"].MetadataStringValue.StringValue, author, "saved author custom property should match the provided one")
+}
+
+func TestGetInferenceServiceByParamsName(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	getByName, err := service.GetInferenceServiceByParams(&entityName, &parentResourceId, nil)
+	assertion.Nilf(err, "error getting model version by name %d", *createdEntityId)
+
+	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*createdEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context, not related to the test itself: %v", err)
+
+	ctx := ctxById.Contexts[0]
+	assertion.Equal(*converter.Int64ToString(ctx.Id), *getByName.Id, "returned id should match the mlmd context one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, *getByName.Name), *ctx.Name, "saved name should match the provided one")
+	assertion.Equal(*ctx.ExternalId, *getByName.ExternalID, "saved external id should match the provided one")
+	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByName.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
+}
+
+func TestGetInfernenceServiceByParamsExternalId(t *testing.T) {
+	assertion, conn, client, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	getByExternalId, err := service.GetInferenceServiceByParams(nil, nil, eut.ExternalID)
+	assertion.Nilf(err, "error getting by external id %d", *eut.ExternalID)
+
+	ctxById, err := client.GetContextsByID(context.Background(), &proto.GetContextsByIDRequest{
+		ContextIds: []int64{
+			*createdEntityId,
+		},
+	})
+	assertion.Nilf(err, "error retrieving context, not related to the test itself: %v", err)
+
+	ctx := ctxById.Contexts[0]
+	assertion.Equal(*converter.Int64ToString(ctx.Id), *getByExternalId.Id, "returned id should match the mlmd context one")
+	assertion.Equal(fmt.Sprintf("%s:%s", parentResourceId, *getByExternalId.Name), *ctx.Name, "saved name should match the provided one")
+	assertion.Equal(*ctx.ExternalId, *getByExternalId.ExternalID, "saved external id should match the provided one")
+	assertion.Equal(ctx.CustomProperties["author"].GetStringValue(), *(*getByExternalId.CustomProperties)["author"].MetadataStringValue.StringValue, "saved author custom property should match the provided one")
+}
+
+func TestGetInferenceServiceByEmptyParams(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+
+	_, err = service.GetInferenceServiceByParams(nil, nil, nil)
+	assertion.NotNil(err)
+	assertion.Equal("invalid parameters call, supply either (name and parentResourceId), or externalId", err.Error())
+}
+
+func TestGetInferenceServices(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut1 := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+	}
+
+	secondName := "v2"
+	secondExtId := "org.myawesomeentity@v2"
+	eut2 := &openapi.InferenceService{
+		Name:                 &secondName,
+		ExternalID:           &secondExtId,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+	}
+
+	thirdName := "v3"
+	thirdExtId := "org.myawesomeentity@v3"
+	eut3 := &openapi.InferenceService{
+		Name:                 &thirdName,
+		ExternalID:           &thirdExtId,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+	}
+
+	createdEntity1, err := service.UpsertInferenceService(eut1)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	createdEntity2, err := service.UpsertInferenceService(eut2)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	createdEntity3, err := service.UpsertInferenceService(eut3)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+
+	anotherParentResourceName := "AnotherModel"
+	anotherParentResourceExtId := "org.another"
+	anotherParentResourceId := registerServingEnvironment(assertion, service, &anotherParentResourceName, &anotherParentResourceExtId)
+
+	anotherName := "v1.0"
+	anotherExtId := "org.another@v1.0"
+	eutAnother := &openapi.InferenceService{
+		Name:                 &anotherName,
+		ExternalID:           &anotherExtId,
+		ServingEnvironmentId: anotherParentResourceId,
+		RegisteredModelId:    registeredModelId,
+	}
+
+	_, err = service.UpsertInferenceService(eutAnother)
+	assertion.Nilf(err, "error creating new model version for %d", anotherParentResourceId)
+
+	createdId1, _ := converter.StringToInt64(createdEntity1.Id)
+	createdId2, _ := converter.StringToInt64(createdEntity2.Id)
+	createdId3, _ := converter.StringToInt64(createdEntity3.Id)
+
+	getAll, err := service.GetInferenceServices(ListOptions{}, nil)
+	assertion.Nilf(err, "error getting all")
+	assertion.Equal(int32(4), getAll.Size, "expected 4 across all parent resources")
+
+	getAllByParentResource, err := service.GetInferenceServices(ListOptions{}, &parentResourceId)
+	assertion.Nilf(err, "error getting all")
+	assertion.Equalf(int32(3), getAllByParentResource.Size, "expected 3 for parent resource %d", parentResourceId)
+
+	assertion.Equal(*converter.Int64ToString(createdId1), *getAllByParentResource.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdId2), *getAllByParentResource.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdId3), *getAllByParentResource.Items[2].Id)
+
+	// order by last update time, expecting last created as first
+	orderByLastUpdate := "LAST_UPDATE_TIME"
+	getAllByParentResource, err = service.GetInferenceServices(ListOptions{
+		OrderBy:   &orderByLastUpdate,
+		SortOrder: &descOrderDirection,
+	}, &parentResourceId)
+	assertion.Nilf(err, "error getting all")
+	assertion.Equalf(int32(3), getAllByParentResource.Size, "expected 3 for parent resource %d", parentResourceId)
+
+	assertion.Equal(*converter.Int64ToString(createdId1), *getAllByParentResource.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdId2), *getAllByParentResource.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdId3), *getAllByParentResource.Items[0].Id)
+
+	// update the second entity
+	newExternalId := "updated.org:v2"
+	createdEntity2.ExternalID = &newExternalId
+	createdEntity2, err = service.UpsertInferenceService(createdEntity2)
+	assertion.Nilf(err, "error creating new eut2 for %d", parentResourceId)
+
+	assertion.Equal(newExternalId, *createdEntity2.ExternalID)
+
+	getAllByParentResource, err = service.GetInferenceServices(ListOptions{
+		OrderBy:   &orderByLastUpdate,
+		SortOrder: &descOrderDirection,
+	}, &parentResourceId)
+	assertion.Nilf(err, "error getting all")
+	assertion.Equalf(int32(3), getAllByParentResource.Size, "expected 3 for parent resource %d", parentResourceId)
+
+	assertion.Equal(*converter.Int64ToString(createdId1), *getAllByParentResource.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdId2), *getAllByParentResource.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdId3), *getAllByParentResource.Items[1].Id)
+}

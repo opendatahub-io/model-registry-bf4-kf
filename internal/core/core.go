@@ -82,10 +82,11 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (ModelRegistryApi, err
 		ContextType: &proto.ContextType{
 			Name: inferenceServiceTypeName,
 			Properties: map[string]proto.PropertyType{
-				"description":      proto.PropertyType_STRING,
-				"model_version_id": proto.PropertyType_INT,
+				"description":         proto.PropertyType_STRING,
+				"model_version_id":    proto.PropertyType_INT,
+				"registered_model_id": proto.PropertyType_INT,
+				// TODO: check with Andrea, my understanding is parent/child is ownership of ServingEnvironment/InferenceService (moving comment down 1 line for serving_environment_id)
 				// we could remove this as we will use ParentContext to keep track of this association
-				"registered_model_id":    proto.PropertyType_INT,
 				"serving_environment_id": proto.PropertyType_INT,
 			},
 		},
