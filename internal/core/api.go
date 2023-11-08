@@ -83,9 +83,9 @@ type ModelRegistryApi interface {
 
 	// UpsertInferenceService create or update an inference service, the behavior follows the same
 	// approach used by MLMD gRPC api. If Id is provided update the entity otherwise create a new one.
-	// registeredModel.servingEnvironmentId defines the ServingEnvironment to be associated as parent ownership
+	// inferenceService.servingEnvironmentId defines the ServingEnvironment to be associated as parent ownership
 	// to the newly created InferenceService.
-	UpsertInferenceService(registeredModel *openapi.InferenceService) (*openapi.InferenceService, error)
+	UpsertInferenceService(inferenceService *openapi.InferenceService) (*openapi.InferenceService, error)
 
 	// GetInferenceServiceById retrieve InferenceService by id
 	GetInferenceServiceById(id string) (*openapi.InferenceService, error)
