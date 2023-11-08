@@ -1245,7 +1245,7 @@ func (serv *modelRegistryService) GetServeModels(listOptions ListOptions, parent
 		nextPageToken = executionsResp.NextPageToken
 	} else {
 		executionsResp, err := serv.mlmdClient.GetExecutionsByType(context.Background(), &proto.GetExecutionsByTypeRequest{
-			TypeName: modelArtifactTypeName,
+			TypeName: serveModelTypeName,
 			Options:  listOperationOptions,
 		})
 		if err != nil {

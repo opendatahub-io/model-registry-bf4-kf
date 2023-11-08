@@ -2483,9 +2483,9 @@ func TestCreateServeModel(t *testing.T) {
 
 	createdEntity, err := service.UpsertServeModel(eut, &inferenceServiceId)
 	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
+	assertion.NotNil(createdEntity.Id, "created id should not be nil")
 
 	state, _ := openapi.NewExecutionStateFromValue(executionState)
-	assertion.NotNil(createdEntity.Id, "created id should not be nil")
 	assertion.Equal(entityName, *createdEntity.Name)
 	assertion.Equal(*state, *createdEntity.LastKnownState)
 	assertion.Equal(createdVersionId, createdEntity.ModelVersionId)
@@ -2548,20 +2548,40 @@ func TestCreateServeModelFailure(t *testing.T) {
 	assertion.Equal("no model version found for id 9998", err.Error())
 }
 
-/*
-func TestUpdateModelArtifact(t *testing.T) {
+func TestUpdateServeModel(t *testing.T) {
 	assertion, conn, client, teardown := setup(t)
 	defer teardown(t)
 
 	// create mode registry service
 	service := initModelRegistryService(assertion, conn)
 
-	modelVersionId := registerModelVersion(assertion, service, nil, nil, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+	inferenceServiceId := registerInferenceService(assertion, service, registeredModelId, nil, nil, nil, nil)
 
-	modelArtifact := &openapi.ModelArtifact{
-		Name:  &artifactName,
-		State: (*openapi.ArtifactState)(&artifactState),
-		Uri:   &artifactUri,
+	modelVersion := &openapi.ModelVersion{
+		Name:        &modelVersionName,
+		ExternalID:  &versionExternalId,
+		Description: &modelVersionDescription,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+	createdVersion, err := service.UpsertModelVersion(modelVersion, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersionId := *createdVersion.Id
+	createdVersionIdAsInt, _ := converter.StringToInt64(&createdVersionId)
+	// end of data preparation
+
+	eut := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		ExternalID:     &entityExternalId2,
+		Description:    &entityDescription,
+		Name:           &entityName,
+		ModelVersionId: createdVersionId,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -2571,43 +2591,63 @@ func TestUpdateModelArtifact(t *testing.T) {
 		},
 	}
 
-	createdArtifact, err := service.UpsertModelArtifact(modelArtifact, &modelVersionId)
-	assertion.Nilf(err, "error creating new model artifact for %d", modelVersionId)
+	createdEntity, err := service.UpsertServeModel(eut, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
 
-	newState := "MARKED_FOR_DELETION"
-	createdArtifact.State = (*openapi.ArtifactState)(&newState)
-	updatedArtifact, err := service.UpsertModelArtifact(createdArtifact, &modelVersionId)
-	assertion.Nilf(err, "error updating model artifact for %d: %v", modelVersionId, err)
+	newState := "UNKNOWN"
+	createdEntity.LastKnownState = (*openapi.ExecutionState)(&newState)
+	updatedEntity, err := service.UpsertServeModel(createdEntity, &inferenceServiceId)
+	assertion.Nilf(err, "error updating entity for %d: %v", inferenceServiceId, err)
 
-	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
-	updatedArtifactId, _ := converter.StringToInt64(updatedArtifact.Id)
-	assertion.Equal(createdArtifactId, updatedArtifactId)
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+	updatedEntityId, _ := converter.StringToInt64(updatedEntity.Id)
+	assertion.Equal(createdEntityId, updatedEntityId)
 
-	getById, err := client.GetArtifactsByID(context.Background(), &proto.GetArtifactsByIDRequest{
-		ArtifactIds: []int64{*createdArtifactId},
+	getById, err := client.GetExecutionsByID(context.Background(), &proto.GetExecutionsByIDRequest{
+		ExecutionIds: []int64{*createdEntityId},
 	})
-	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
+	assertion.Nilf(err, "error getting by id %d", createdEntityId)
 
-	assertion.Equal(*createdArtifactId, *getById.Artifacts[0].Id)
-	assertion.Equal(fmt.Sprintf("%s:%s", modelVersionId, *createdArtifact.Name), *getById.Artifacts[0].Name)
-	assertion.Equal(string(newState), getById.Artifacts[0].State.String())
-	assertion.Equal(*createdArtifact.Uri, *getById.Artifacts[0].Uri)
-	assertion.Equal(*(*createdArtifact.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Artifacts[0].CustomProperties["author"].GetStringValue())
+	assertion.Equal(*createdEntityId, *getById.Executions[0].Id)
+	assertion.Equal(fmt.Sprintf("%s:%s", inferenceServiceId, *createdEntity.Name), *getById.Executions[0].Name)
+	assertion.Equal(string(newState), getById.Executions[0].LastKnownState.String())
+	assertion.Equal(*createdVersionIdAsInt, getById.Executions[0].Properties["model_version_id"].GetIntValue())
+	assertion.Equal(*(*createdEntity.CustomProperties)["author"].MetadataStringValue.StringValue, getById.Executions[0].CustomProperties["author"].GetStringValue())
 }
 
-func TestUpdateModelArtifactFailure(t *testing.T) {
+func TestUpdateServeModelFailure(t *testing.T) {
 	assertion, conn, _, teardown := setup(t)
 	defer teardown(t)
 
 	// create mode registry service
 	service := initModelRegistryService(assertion, conn)
 
-	modelVersionId := registerModelVersion(assertion, service, nil, nil, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+	inferenceServiceId := registerInferenceService(assertion, service, registeredModelId, nil, nil, nil, nil)
 
-	modelArtifact := &openapi.ModelArtifact{
-		Name:  &artifactName,
-		State: (*openapi.ArtifactState)(&artifactState),
-		Uri:   &artifactUri,
+	modelVersion := &openapi.ModelVersion{
+		Name:        &modelVersionName,
+		ExternalID:  &versionExternalId,
+		Description: &modelVersionDescription,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+	createdVersion, err := service.UpsertModelVersion(modelVersion, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersionId := *createdVersion.Id
+	// end of data preparation
+
+	eut := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		ExternalID:     &entityExternalId2,
+		Description:    &entityDescription,
+		Name:           &entityName,
+		ModelVersionId: createdVersionId,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -2617,35 +2657,55 @@ func TestUpdateModelArtifactFailure(t *testing.T) {
 		},
 	}
 
-	createdArtifact, err := service.UpsertModelArtifact(modelArtifact, &modelVersionId)
-	assertion.Nilf(err, "error creating new model artifact for model version %s", modelVersionId)
-	assertion.NotNilf(createdArtifact.Id, "created model artifact should not have nil Id")
+	createdEntity, err := service.UpsertServeModel(eut, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
+	assertion.NotNil(createdEntity.Id, "created id should not be nil")
 
-	newState := "MARKED_FOR_DELETION"
-	createdArtifact.State = (*openapi.ArtifactState)(&newState)
-	updatedArtifact, err := service.UpsertModelArtifact(createdArtifact, &modelVersionId)
-	assertion.Nilf(err, "error updating model artifact for %d: %v", modelVersionId, err)
+	newState := "UNKNOWN"
+	createdEntity.LastKnownState = (*openapi.ExecutionState)(&newState)
+	updatedEntity, err := service.UpsertServeModel(createdEntity, &inferenceServiceId)
+	assertion.Nilf(err, "error updating entity for %d: %v", inferenceServiceId, err)
 
 	wrongId := "9998"
-	updatedArtifact.Id = &wrongId
-	_, err = service.UpsertModelArtifact(updatedArtifact, &modelVersionId)
+	updatedEntity.Id = &wrongId
+	_, err = service.UpsertServeModel(updatedEntity, &inferenceServiceId)
 	assertion.NotNil(err)
-	assertion.Equal(fmt.Sprintf("no model artifact found for id %s", wrongId), err.Error())
+	assertion.Equal(fmt.Sprintf("no ServeModel found for id %s", wrongId), err.Error())
 }
 
-func TestGetModelArtifactById(t *testing.T) {
+func TestGetServeModelById(t *testing.T) {
 	assertion, conn, _, teardown := setup(t)
 	defer teardown(t)
 
 	// create mode registry service
 	service := initModelRegistryService(assertion, conn)
 
-	modelVersionId := registerModelVersion(assertion, service, nil, nil, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+	inferenceServiceId := registerInferenceService(assertion, service, registeredModelId, nil, nil, nil, nil)
 
-	modelArtifact := &openapi.ModelArtifact{
-		Name:  &artifactName,
-		State: (*openapi.ArtifactState)(&artifactState),
-		Uri:   &artifactUri,
+	modelVersion := &openapi.ModelVersion{
+		Name:        &modelVersionName,
+		ExternalID:  &versionExternalId,
+		Description: &modelVersionDescription,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+	createdVersion, err := service.UpsertModelVersion(modelVersion, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersionId := *createdVersion.Id
+	// end of data preparation
+
+	eut := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		ExternalID:     &entityExternalId2,
+		Description:    &entityDescription,
+		Name:           &entityName,
+		ModelVersionId: createdVersionId,
 		CustomProperties: &map[string]openapi.MetadataValue{
 			"author": {
 				MetadataStringValue: &openapi.MetadataStringValue{
@@ -2655,21 +2715,124 @@ func TestGetModelArtifactById(t *testing.T) {
 		},
 	}
 
-	createdArtifact, err := service.UpsertModelArtifact(modelArtifact, &modelVersionId)
-	assertion.Nilf(err, "error creating new model artifact for %d", modelVersionId)
+	createdEntity, err := service.UpsertServeModel(eut, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
 
-	createdArtifactId, _ := converter.StringToInt64(createdArtifact.Id)
+	getById, err := service.GetServeModelById(*createdEntity.Id)
+	assertion.Nilf(err, "error getting entity by id %d", *createdEntity.Id)
 
-	getById, err := service.GetModelArtifactById(*createdArtifact.Id)
-	assertion.Nilf(err, "error getting model artifact by id %d", createdArtifactId)
-
-	state, _ := openapi.NewArtifactStateFromValue(artifactState)
-	assertion.NotNil(createdArtifact.Id, "created artifact id should not be nil")
-	assertion.Equal(artifactName, *getById.Name)
-	assertion.Equal(*state, *getById.State)
-	assertion.Equal(artifactUri, *getById.Uri)
+	state, _ := openapi.NewExecutionStateFromValue(executionState)
+	assertion.NotNil(createdEntity.Id, "created artifact id should not be nil")
+	assertion.Equal(entityName, *getById.Name)
+	assertion.Equal(*state, *getById.LastKnownState)
+	assertion.Equal(createdVersionId, getById.ModelVersionId)
 	assertion.Equal(author, *(*getById.CustomProperties)["author"].MetadataStringValue.StringValue)
 
-	assertion.Equal(*createdArtifact, *getById, "artifacts returned during creation and on get by id should be equal")
+	assertion.Equal(*createdEntity, *getById, "artifacts returned during creation and on get by id should be equal")
 }
-*/
+
+func TestGetServeModels(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	registeredModelId := registerModel(assertion, service, nil, nil)
+	inferenceServiceId := registerInferenceService(assertion, service, registeredModelId, nil, nil, nil, nil)
+
+	modelVersion1Name := "v1"
+	modelVersion1 := &openapi.ModelVersion{Name: &modelVersion1Name, Description: &modelVersionDescription}
+	createdVersion1, err := service.UpsertModelVersion(modelVersion1, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersion1Id := *createdVersion1.Id
+
+	modelVersion2Name := "v2"
+	modelVersion2 := &openapi.ModelVersion{Name: &modelVersion2Name, Description: &modelVersionDescription}
+	createdVersion2, err := service.UpsertModelVersion(modelVersion2, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersion2Id := *createdVersion2.Id
+
+	modelVersion3Name := "v3"
+	modelVersion3 := &openapi.ModelVersion{Name: &modelVersion3Name, Description: &modelVersionDescription}
+	createdVersion3, err := service.UpsertModelVersion(modelVersion3, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersion3Id := *createdVersion3.Id
+	// end of data preparation
+
+	eut1Name := "sm1"
+	eut1 := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		Description:    &entityDescription,
+		Name:           &eut1Name,
+		ModelVersionId: createdVersion1Id,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	eut2Name := "sm2"
+	eut2 := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		Description:    &entityDescription,
+		Name:           &eut2Name,
+		ModelVersionId: createdVersion2Id,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	eut3Name := "sm3"
+	eut3 := &openapi.ServeModel{
+		LastKnownState: (*openapi.ExecutionState)(&executionState),
+		Description:    &entityDescription,
+		Name:           &eut3Name,
+		ModelVersionId: createdVersion3Id,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+
+	createdEntity1, err := service.UpsertServeModel(eut1, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
+	createdEntity2, err := service.UpsertServeModel(eut2, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
+	createdEntity3, err := service.UpsertServeModel(eut3, &inferenceServiceId)
+	assertion.Nilf(err, "error creating new ServeModel for %d", inferenceServiceId)
+
+	createdEntityId1, _ := converter.StringToInt64(createdEntity1.Id)
+	createdEntityId2, _ := converter.StringToInt64(createdEntity2.Id)
+	createdEntityId3, _ := converter.StringToInt64(createdEntity3.Id)
+
+	getAll, err := service.GetServeModels(ListOptions{}, nil)
+	assertion.Nilf(err, "error getting all ServeModel")
+	assertion.Equalf(int32(3), getAll.Size, "expected three ServeModel")
+
+	assertion.Equal(*converter.Int64ToString(createdEntityId1), *getAll.Items[0].Id)
+	assertion.Equal(*converter.Int64ToString(createdEntityId2), *getAll.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdEntityId3), *getAll.Items[2].Id)
+
+	orderByLastUpdate := "LAST_UPDATE_TIME"
+	getAllByInferenceService, err := service.GetServeModels(ListOptions{
+		OrderBy:   &orderByLastUpdate,
+		SortOrder: &descOrderDirection,
+	}, &inferenceServiceId)
+	assertion.Nilf(err, "error getting all ServeModels for %d", inferenceServiceId)
+	assertion.Equalf(int32(3), getAllByInferenceService.Size, "expected three ServeModels for InferenceServiceId %d", inferenceServiceId)
+
+	assertion.Equal(*converter.Int64ToString(createdEntityId1), *getAllByInferenceService.Items[2].Id)
+	assertion.Equal(*converter.Int64ToString(createdEntityId2), *getAllByInferenceService.Items[1].Id)
+	assertion.Equal(*converter.Int64ToString(createdEntityId3), *getAllByInferenceService.Items[0].Id)
+}
