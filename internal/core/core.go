@@ -225,7 +225,11 @@ func (serv *modelRegistryService) GetRegisteredModelById(id string) (*openapi.Re
 }
 
 func (serv *modelRegistryService) GetRegisteredModelByInferenceService(inferenceServiceId string) (*openapi.RegisteredModel, error) {
-	panic("method not yet implemented")
+	is, err := serv.GetInferenceServiceById(inferenceServiceId)
+	if err != nil {
+		return nil, err
+	}
+	return serv.GetRegisteredModelById(is.RegisteredModelId)
 }
 
 func (serv *modelRegistryService) getRegisteredModelByVersionId(id string) (*openapi.RegisteredModel, error) {
@@ -431,7 +435,24 @@ func (serv *modelRegistryService) GetModelVersionById(id string) (*openapi.Model
 }
 
 func (serv *modelRegistryService) GetModelVersionByInferenceService(inferenceServiceId string) (*openapi.ModelVersion, error) {
-	panic("method not yet implemented")
+	is, err := serv.GetInferenceServiceById(inferenceServiceId)
+	if err != nil {
+		return nil, err
+	}
+	if is.ModelVersionId != nil {
+		return serv.GetModelVersionById(*is.ModelVersionId)
+	}
+	// modelVersionId: ID of the ModelVersion to serve. If it's unspecified, then the latest ModelVersion by creation order will be served.
+	orderByCreateTime := "CREATE_TIME"
+	sortOrderDesc := "DESC"
+	versions, err := serv.GetModelVersions(ListOptions{OrderBy: &orderByCreateTime, SortOrder: &sortOrderDesc}, &is.RegisteredModelId)
+	if err != nil {
+		return nil, err
+	}
+	if len(versions.Items) == 0 {
+		return nil, fmt.Errorf("no model versions found for id %s", is.RegisteredModelId)
+	}
+	return &versions.Items[0], nil
 }
 
 func (serv *modelRegistryService) getModelVersionByArtifactId(id string) (*openapi.ModelVersion, error) {

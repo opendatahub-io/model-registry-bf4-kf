@@ -2196,6 +2196,97 @@ func TestGetInferenceServiceById(t *testing.T) {
 	assertion.Equal(*(*getById.CustomProperties)["author"].MetadataStringValue.StringValue, author, "saved author custom property should match the provided one")
 }
 
+func TestGetRegisteredModelByInferenceServiceId(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+	assertion.NotNilf(createdEntity.Id, "created eut should not have nil Id")
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	getRM, err := service.GetRegisteredModelByInferenceService(*createdEntity.Id)
+	assertion.Nilf(err, "error getting using id %d", *createdEntityId)
+
+	assertion.Equal(registeredModelId, *getRM.Id, "returned id should match the original registeredModelId")
+}
+
+func TestGetModelVersionByInferenceServiceId(t *testing.T) {
+	assertion, conn, _, teardown := setup(t)
+	defer teardown(t)
+	// todo
+	// create mode registry service
+	service := initModelRegistryService(assertion, conn)
+
+	parentResourceId := registerServingEnvironment(assertion, service, nil, nil)
+	registeredModelId := registerModel(assertion, service, nil, nil)
+
+	modelVersion1Name := "v1"
+	modelVersion1 := &openapi.ModelVersion{Name: &modelVersion1Name, Description: &modelVersionDescription}
+	createdVersion1, err := service.UpsertModelVersion(modelVersion1, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersion1Id := *createdVersion1.Id
+
+	modelVersion2Name := "v2"
+	modelVersion2 := &openapi.ModelVersion{Name: &modelVersion2Name, Description: &modelVersionDescription}
+	createdVersion2, err := service.UpsertModelVersion(modelVersion2, &registeredModelId)
+	assertion.Nilf(err, "error creating new model version for %d", registeredModelId)
+	createdVersion2Id := *createdVersion2.Id
+	// end of data preparation
+
+	eut := &openapi.InferenceService{
+		Name:                 &entityName,
+		ExternalID:           &entityExternalId2,
+		Description:          &entityDescription,
+		ServingEnvironmentId: parentResourceId,
+		RegisteredModelId:    registeredModelId,
+		ModelVersionId:       nil, // first we test by unspecified
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"author": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &author,
+				},
+			},
+		},
+	}
+	createdEntity, err := service.UpsertInferenceService(eut)
+	assertion.Nilf(err, "error creating new eut for %v", parentResourceId)
+	createdEntityId, _ := converter.StringToInt64(createdEntity.Id)
+
+	getVModel, err := service.GetModelVersionByInferenceService(*createdEntity.Id)
+	assertion.Nilf(err, "error getting using id %d", *createdEntityId)
+	assertion.Equal(createdVersion2Id, *getVModel.Id, "returned id shall be the latest ModelVersion by creation order")
+
+	// here we used the returned entity (so ID is populated), and we update to specify the "ID of the ModelVersion to serve"
+	createdEntity.ModelVersionId = &createdVersion1Id
+	_, err = service.UpsertInferenceService(createdEntity)
+	assertion.Nilf(err, "error updating eut for %v", parentResourceId)
+
+	getVModel, err = service.GetModelVersionByInferenceService(*createdEntity.Id)
+	assertion.Nilf(err, "error getting using id %d", *createdEntityId)
+	assertion.Equal(createdVersion1Id, *getVModel.Id, "returned id shall be the specified one")
+}
+
 func TestGetInferenceServiceByParamsName(t *testing.T) {
 	assertion, conn, client, teardown := setup(t)
 	defer teardown(t)
