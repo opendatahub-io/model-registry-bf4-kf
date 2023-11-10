@@ -46,12 +46,12 @@ func ZeroIfNil[T any](input *T) T {
 	return *new(T)
 }
 
-func BuildListOption(pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (*api.ListOptions, error) {
+func BuildListOption(pageSize string, orderBy model.OrderByField, sortOrder model.SortOrder, nextPageToken string) (api.ListOptions, error) {
 	var pageSizeInt32 *int32
 	if pageSize != "" {
 		conv, err := converter.StringToInt32(pageSize)
 		if err != nil {
-			return nil, err
+			return api.ListOptions{}, err
 		}
 		pageSizeInt32 = &conv
 	}
@@ -67,7 +67,7 @@ func BuildListOption(pageSize string, orderBy model.OrderByField, sortOrder mode
 	if nextPageToken != "" {
 		nextPageTokenParam = &nextPageToken
 	}
-	return &api.ListOptions{
+	return api.ListOptions{
 		PageSize:      pageSizeInt32,
 		OrderBy:       orderByString,
 		SortOrder:     sortOrderString,

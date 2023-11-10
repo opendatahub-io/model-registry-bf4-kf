@@ -236,7 +236,7 @@ func (s *ModelRegistryServiceAPIService) GetEnvironmentInferenceServices(ctx con
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetInferenceServices(*listOpts, &servingenvironmentId)
+	result, err := s.coreApi.GetInferenceServices(listOpts, &servingenvironmentId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -273,7 +273,7 @@ func (s *ModelRegistryServiceAPIService) GetInferenceServiceServes(ctx context.C
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetServeModels(*listOpts, &inferenceserviceId)
+	result, err := s.coreApi.GetServeModels(listOpts, &inferenceserviceId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -299,7 +299,7 @@ func (s *ModelRegistryServiceAPIService) GetInferenceServices(ctx context.Contex
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetInferenceServices(*listOpts, nil)
+	result, err := s.coreApi.GetInferenceServices(listOpts, nil)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -325,7 +325,7 @@ func (s *ModelRegistryServiceAPIService) GetModelArtifacts(ctx context.Context, 
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetModelArtifacts(*listOpts, nil)
+	result, err := s.coreApi.GetModelArtifacts(listOpts, nil)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -354,7 +354,7 @@ func (s *ModelRegistryServiceAPIService) GetModelVersionArtifacts(ctx context.Co
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetModelArtifacts(*listOpts, &modelversionId)
+	result, err := s.coreApi.GetModelArtifacts(listOpts, &modelversionId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -369,7 +369,7 @@ func (s *ModelRegistryServiceAPIService) GetModelVersions(ctx context.Context, p
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetModelVersions(*listOpts, nil)
+	result, err := s.coreApi.GetModelVersions(listOpts, nil)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -398,7 +398,7 @@ func (s *ModelRegistryServiceAPIService) GetRegisteredModelVersions(ctx context.
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetModelVersions(*listOpts, &registeredmodelId)
+	result, err := s.coreApi.GetModelVersions(listOpts, &registeredmodelId)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -413,7 +413,7 @@ func (s *ModelRegistryServiceAPIService) GetRegisteredModels(ctx context.Context
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetRegisteredModels(*listOpts)
+	result, err := s.coreApi.GetRegisteredModels(listOpts)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
@@ -440,7 +440,7 @@ func (s *ModelRegistryServiceAPIService) GetServingEnvironments(ctx context.Cont
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
-	result, err := s.coreApi.GetServingEnvironments(*listOpts)
+	result, err := s.coreApi.GetServingEnvironments(listOpts)
 	if err != nil {
 		return Response(500, model.Error{Message: err.Error()}), nil
 	}
