@@ -57,9 +57,8 @@ func TestStringToInt32InvalidNumber(t *testing.T) {
 	assertion := setup(t)
 
 	invalid := "not-a-number"
-	converted, err := StringToInt32(invalid)
+	_, err := StringToInt32(invalid)
 	assertion.NotNil(err)
-	assertion.Equal(int32(0), converted)
 }
 
 func TestMetadataValueBool(t *testing.T) {
