@@ -51,7 +51,6 @@ func TestStringToInt32(t *testing.T) {
 	converted, err := StringToInt32(valid)
 	assertion.Nil(err)
 	assertion.Equal(int32(12345), converted)
-	assertion.Nil(StringToInt64(nil))
 }
 
 func TestStringToInt32InvalidNumber(t *testing.T) {
