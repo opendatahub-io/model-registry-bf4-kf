@@ -89,6 +89,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (api.ModelRegistryApi,
 				"registered_model_id": proto.PropertyType_INT,
 				// same information tracked using ParentContext association
 				"serving_environment_id": proto.PropertyType_INT,
+				"runtime":                proto.PropertyType_STRING,
 			},
 		},
 	}
@@ -99,7 +100,6 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (api.ModelRegistryApi,
 			Properties: map[string]proto.PropertyType{
 				"description":      proto.PropertyType_STRING,
 				"model_version_id": proto.PropertyType_INT,
-				"runtime":          proto.PropertyType_STRING,
 			},
 		},
 	}
