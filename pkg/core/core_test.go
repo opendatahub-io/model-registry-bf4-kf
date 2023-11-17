@@ -323,7 +323,7 @@ func TestModelRegistryStartupWithExistingEmptyTypes(t *testing.T) {
 	modelArtifactResp, _ = client.GetArtifactType(ctx, &proto.GetArtifactTypeRequest{
 		TypeName: modelArtifactTypeName,
 	})
-	assertion.NotNilf(modelArtifactResp.ArtifactType, "model version type %s should exists", *modelArtifactTypeName)
+	assertion.NotNilf(modelArtifactResp.ArtifactType, "model artifact type %s should exists", *modelArtifactTypeName)
 	assertion.Equal(*modelArtifactTypeName, *modelArtifactResp.ArtifactType.Name)
 	assertion.Equal(6, len(modelArtifactResp.ArtifactType.Properties))
 
