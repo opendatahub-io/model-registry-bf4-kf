@@ -6,8 +6,8 @@ from typing import Optional
 from ml_metadata.proto import Artifact, Context, MetadataStoreClientConfig
 
 from .exceptions import StoreException
-from .store import ProtoType, MLMDStore
-from .types import ModelArtifact, ModelVersion, RegisteredModel, ListOptions
+from .store import MLMDStore, ProtoType
+from .types import ListOptions, ModelArtifact, ModelVersion, RegisteredModel
 from .types.artifacts import BaseArtifact
 from .types.base import Mappable
 from .types.contexts import BaseContext
@@ -166,7 +166,7 @@ class ModelRegistry:
         Returns:
             Sequence[RegisteredModel]: Registered models.
         """
-        mlmd_options = options.as_mlmd_list_options() if options else None
+        mlmd_options = options.as_mlmd_list_options() if options else MLMDListOptions()
         proto_rms = self._store.get_contexts(
             RegisteredModel.get_proto_type_name(), mlmd_options
         )
