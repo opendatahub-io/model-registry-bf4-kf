@@ -20,7 +20,7 @@ except ImportError:
 
 
 package = "model_registry"
-python_versions = ["3.10", "3.9"]
+python_versions = ["3.11", "3.10", "3.9"]
 nox.needs_version = ">= 2021.6.6"
 nox.options.sessions = (
     "lint",
@@ -28,6 +28,9 @@ nox.options.sessions = (
     "tests",
     "docs-build",
 )
+
+
+TFX_NIGHTLY_URL = "https://pypi-nightly.tensorflow.org/simple"
 
 
 @session(python=python_versions[0])
@@ -49,7 +52,14 @@ def mypy(session: Session) -> None:
 @session(python=python_versions)
 def tests(session: Session) -> None:
     """Run the test suite."""
-    session.install(".", "coverage[toml]", "pytest", "pytest-cov")
+    session.install(
+        "--extra-index-url",
+        TFX_NIGHTLY_URL,
+        ".",
+        "coverage[toml]",
+        "pytest",
+        "pytest-cov",
+    )
 
     try:
         session.run(
@@ -84,7 +94,14 @@ def docs_build(session: Session) -> None:
     if not session.posargs and "FORCE_COLOR" in os.environ:
         args.insert(0, "--color")
 
-    session.install(".", "sphinx", "furo", "myst-parser[linkify]")
+    session.install(
+        "--extra-index-url",
+        TFX_NIGHTLY_URL,
+        ".",
+        "sphinx",
+        "furo",
+        "myst-parser[linkify]",
+    )
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():
@@ -97,7 +114,15 @@ def docs_build(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and serve the documentation with live reloading on file changes."""
     args = session.posargs or ["--open-browser", "docs", "docs/_build"]
-    session.install(".", "sphinx", "furo", "myst-parser[linkify]", "sphinx-autobuild")
+    session.install(
+        "--extra-index-url",
+        TFX_NIGHTLY_URL,
+        ".",
+        "sphinx",
+        "furo",
+        "myst-parser[linkify]",
+        "sphinx-autobuild",
+    )
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():

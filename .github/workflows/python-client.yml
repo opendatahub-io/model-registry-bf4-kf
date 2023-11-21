@@ -14,9 +14,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { python: "3.11", session: "tests" }
           - { python: "3.10", session: "tests" }
           - { python: "3.9", session: "tests" }
-          - { python: "3.10", session: "docs-build" }
+          - { python: "3.11", session: "docs-build" }
 
     env:
       NOXSESSION: ${{ matrix.session }}
@@ -59,7 +60,7 @@ jobs:
 
       - name: Lint
         working-directory: clients/python
-        if: matrix.session == 'tests'
+        if: matrix.session == 'tests' && matrix.version == '3.11'
         run: |
           nox --python=${{ matrix.python }} -s lint
           nox --python=${{ matrix.python }} -s mypy || failure=true
