@@ -1,7 +1,7 @@
-"""Client for the model registry.
-"""
+"""Client for the model registry."""
+from __future__ import annotations
+
 from collections.abc import Sequence
-from typing import Optional
 
 from ml_metadata.proto import Artifact, Context, MetadataStoreClientConfig
 
@@ -21,9 +21,9 @@ class ModelRegistry:
         self,
         server_address: str,
         port: int,
-        client_key: Optional[str] = None,
-        server_cert: Optional[str] = None,
-        custom_ca: Optional[str] = None,
+        client_key: str | None = None,
+        server_cert: str | None = None,
+        custom_ca: str | None = None,
     ):
         """Constructor.
 
@@ -131,7 +131,7 @@ class ModelRegistry:
         return py_rm
 
     def get_registered_model_by_params(
-        self, name: Optional[str] = None, external_id: Optional[str] = None
+        self, name: str | None = None, external_id: str | None = None
     ) -> RegisteredModel:
         """Fetch a registered model by its name or external ID.
 
@@ -156,7 +156,7 @@ class ModelRegistry:
         return py_rm
 
     def get_registered_models(
-        self, options: Optional[ListOptions] = None
+        self, options: ListOptions | None = None
     ) -> Sequence[RegisteredModel]:
         """Fetch registered models.
 
@@ -232,7 +232,7 @@ class ModelRegistry:
         return py_mv
 
     def get_model_versions(
-        self, registered_model_id: str, options: Optional[ListOptions] = None
+        self, registered_model_id: str, options: ListOptions | None = None
     ) -> Sequence[ModelVersion]:
         """Fetch model versions by registered model ID.
 
@@ -259,9 +259,9 @@ class ModelRegistry:
 
     def get_model_version_by_params(
         self,
-        registered_model_id: Optional[str] = None,
-        version: Optional[str] = None,
-        external_id: Optional[str] = None,
+        registered_model_id: str | None = None,
+        version: str | None = None,
+        external_id: str | None = None,
     ) -> ModelVersion:
         """Fetch a model version by associated parameters.
 
@@ -351,7 +351,7 @@ class ModelRegistry:
         return py_ma
 
     def get_model_artifact_by_params(
-        self, model_version_id: Optional[str] = None, external_id: Optional[str] = None
+        self, model_version_id: str | None = None, external_id: str | None = None
     ) -> ModelArtifact:
         """Fetch a model artifact either by external ID or by the ID of its associated model version.
 
@@ -380,8 +380,8 @@ class ModelRegistry:
 
     def get_model_artifacts(
         self,
-        model_version_id: Optional[str] = None,
-        options: Optional[ListOptions] = None,
+        model_version_id: str | None = None,
+        options: ListOptions | None = None,
     ) -> Sequence[ModelArtifact]:
         """Fetches model artifacts.
 

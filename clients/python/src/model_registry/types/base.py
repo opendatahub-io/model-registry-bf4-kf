@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from inspect import isabstract
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 
 from attrs import define, field
 from typing_extensions import override
@@ -18,7 +18,7 @@ class Mappable(ABC):
 
     @classmethod
     def get_proto_type_name(cls) -> str:
-        """Name of the proto type
+        """Name of the proto type.
 
         Returns:
             str: Name of the class prefixed with `odh.`
@@ -28,8 +28,7 @@ class Mappable(ABC):
     @property
     @abstractmethod
     def proto_name(self) -> str:
-        """Name of the proto object.
-        """
+        """Name of the proto object."""
         pass
 
     @abstractmethod
@@ -47,7 +46,7 @@ class Mappable(ABC):
         """Map from a proto object.
 
         Args:
-            ProtoType: Proto object.
+            mlmd_obj (ProtoType): Proto object.
 
         Returns:
             Mappable: Python object.
@@ -61,17 +60,17 @@ class Prefixable(ABC):
     We use prefixes to ensure that the user can insert more than one instance of the same type
     with the same name/external_id.
     """
+
     @property
     @abstractmethod
     def mlmd_name_prefix(self) -> str:
-        """Prefix to be used in the proto object.
-        """
+        """Prefix to be used in the proto object."""
         pass
 
 
 @define(slots=False, init=False)
 class ProtoBase(Mappable, ABC):
-    """Abstract base type for protos
+    """Abstract base type for protos.
 
     This is a type defining common functionality for all types representing Model Registry protos,
     such as Artifacts, Contexts, and Executions.
@@ -86,11 +85,11 @@ class ProtoBase(Mappable, ABC):
     """
 
     name: str = field(init=False)
-    id: Optional[str] = field(init=False, default=None)
-    description: Optional[str] = field(kw_only=True, default=None)
-    external_id: Optional[str] = field(kw_only=True, default=None)
-    create_time_since_epoch: Optional[int] = field(init=False, default=None)
-    last_update_time_since_epoch: Optional[int] = field(init=False, default=None)
+    id: str | None = field(init=False, default=None)
+    description: str | None = field(kw_only=True, default=None)
+    external_id: str | None = field(kw_only=True, default=None)
+    create_time_since_epoch: int | None = field(init=False, default=None)
+    last_update_time_since_epoch: int | None = field(init=False, default=None)
 
     _types_map: ClassVar[dict[str, type[ProtoBase]]] = {}
 
@@ -131,7 +130,7 @@ class ProtoBase(Mappable, ABC):
 
     @staticmethod
     def _map_props(
-        py_props: Mapping[str, Optional[ScalarType]], mlmd_props: dict[str, Any]
+        py_props: Mapping[str, ScalarType | None], mlmd_props: dict[str, Any]
     ):
         """Map properties from Python to proto.
 
@@ -200,8 +199,8 @@ class ProtoBase(Mappable, ABC):
         py_obj.id = str(mlmd_obj.id)
         if isinstance(py_obj, Prefixable):
             name: str = mlmd_obj.name
-            assert ':' in name, f"Expected {name} to be prefixed"
-            py_obj.name = name.split(':', 1)[1]
+            assert ":" in name, f"Expected {name} to be prefixed"
+            py_obj.name = name.split(":", 1)[1]
         else:
             py_obj.name = mlmd_obj.name
         py_obj.description = mlmd_obj.properties["description"].string_value
