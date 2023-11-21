@@ -28,7 +28,8 @@ class Mappable(ABC):
     @property
     @abstractmethod
     def proto_name(self) -> str:
-        """Name of the proto object."""
+        """Name of the proto object.
+        """
         pass
 
     @abstractmethod
@@ -60,11 +61,11 @@ class Prefixable(ABC):
     We use prefixes to ensure that the user can insert more than one instance of the same type
     with the same name/external_id.
     """
-
     @property
     @abstractmethod
     def mlmd_name_prefix(self) -> str:
-        """Prefix to be used in the proto object."""
+        """Prefix to be used in the proto object.
+        """
         pass
 
 
@@ -91,7 +92,7 @@ class ProtoBase(Mappable, ABC):
     create_time_since_epoch: Optional[int] = field(init=False, default=None)
     last_update_time_since_epoch: Optional[int] = field(init=False, default=None)
 
-    _types_map: ClassVar[dict[str, ProtoBase]] = {}
+    _types_map: ClassVar[dict[str, type[ProtoBase]]] = {}
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -100,7 +101,7 @@ class ProtoBase(Mappable, ABC):
         cls._types_map[cls.get_proto_type_name()] = cls
 
     @classmethod
-    def get_subclass(cls, proto_type_name: str) -> Mappable:
+    def get_subclass(cls, proto_type_name: str) -> type[ProtoBase]:
         """Get a subclass by proto type name.
 
         Args:
@@ -193,13 +194,14 @@ class ProtoBase(Mappable, ABC):
 
     @classmethod
     @override
-    def unmap(cls, mlmd_obj: ProtoType) -> ProtoBase:
+    def unmap(cls: type[type[ProtoBase]], mlmd_obj: ProtoType) -> type[ProtoBase]:
+        assert cls is not ProtoBase, "Cannot unmap ProtoBase"
         py_obj = cls.__new__(cls)
         py_obj.id = str(mlmd_obj.id)
         if isinstance(py_obj, Prefixable):
             name: str = mlmd_obj.name
-            assert ":" in name, f"Expected {name} to be prefixed"
-            py_obj.name = name.split(":", 1)[1]
+            assert ':' in name, f"Expected {name} to be prefixed"
+            py_obj.name = name.split(':', 1)[1]
         else:
             py_obj.name = mlmd_obj.name
         py_obj.description = mlmd_obj.properties["description"].string_value
