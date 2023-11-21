@@ -1,14 +1,12 @@
 """Tests for user facing model registry APIs."""
 
-from collections import namedtuple
-
 from attrs import evolve
 from ml_metadata.proto import (
-    ArtifactType,
     Artifact,
+    ArtifactType,
     Attribution,
-    ContextType,
     Context,
+    ContextType,
     ParentContext,
     metadata_store_pb2,
 )
@@ -17,6 +15,8 @@ from model_registry.exceptions import StoreException
 from model_registry.store import MLMDStore
 from model_registry.types import ModelArtifact, ModelVersion, RegisteredModel
 from pytest import fixture, raises
+
+from . import Mapped
 
 
 @fixture
