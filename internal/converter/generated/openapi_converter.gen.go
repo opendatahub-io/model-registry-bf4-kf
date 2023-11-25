@@ -619,16 +619,6 @@ func (c *OpenAPIConverterImpl) OverrideNotEditableForModelVersion(source convert
 		pString2 = &xstring
 	}
 	openapiModelVersion.Name = pString2
-	var pOpenapiModelVersionState *openapi.ModelVersionState
-	if source.Existing != nil {
-		pOpenapiModelVersionState = source.Existing.State
-	}
-	var pOpenapiModelVersionState2 *openapi.ModelVersionState
-	if pOpenapiModelVersionState != nil {
-		openapiModelVersionState := openapi.ModelVersionState(*pOpenapiModelVersionState)
-		pOpenapiModelVersionState2 = &openapiModelVersionState
-	}
-	openapiModelVersion.State = pOpenapiModelVersionState2
 	return openapiModelVersion, nil
 }
 func (c *OpenAPIConverterImpl) OverrideNotEditableForRegisteredModel(source converter.OpenapiUpdateWrapper[openapi.RegisteredModel]) (openapi.RegisteredModel, error) {
@@ -643,16 +633,6 @@ func (c *OpenAPIConverterImpl) OverrideNotEditableForRegisteredModel(source conv
 		pString2 = &xstring
 	}
 	openapiRegisteredModel.Name = pString2
-	var pOpenapiRegisteredModelState *openapi.RegisteredModelState
-	if source.Existing != nil {
-		pOpenapiRegisteredModelState = source.Existing.State
-	}
-	var pOpenapiRegisteredModelState2 *openapi.RegisteredModelState
-	if pOpenapiRegisteredModelState != nil {
-		openapiRegisteredModelState := openapi.RegisteredModelState(*pOpenapiRegisteredModelState)
-		pOpenapiRegisteredModelState2 = &openapiRegisteredModelState
-	}
-	openapiRegisteredModel.State = pOpenapiRegisteredModelState2
 	return openapiRegisteredModel, nil
 }
 func (c *OpenAPIConverterImpl) OverrideNotEditableForServeModel(source converter.OpenapiUpdateWrapper[openapi.ServeModel]) (openapi.ServeModel, error) {

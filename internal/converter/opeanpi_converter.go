@@ -2,31 +2,10 @@ package converter
 
 import "github.com/opendatahub-io/model-registry/pkg/openapi"
 
-type OpenapiUpdateWrapper[
-	M openapi.RegisteredModel |
-		openapi.ModelVersion |
-		openapi.ModelArtifact |
-		openapi.ServingEnvironment |
-		openapi.InferenceService |
-		openapi.ServeModel,
-] struct {
-	Existing *M
-	Update   *M
-}
-
-func NewOpenapiUpdateWrapper[
-	M openapi.RegisteredModel |
-		openapi.ModelVersion |
-		openapi.ModelArtifact |
-		openapi.ServingEnvironment |
-		openapi.InferenceService |
-		openapi.ServeModel,
-](existing *M, update *M) OpenapiUpdateWrapper[M] {
-	return OpenapiUpdateWrapper[M]{
-		Existing: existing,
-		Update:   update,
-	}
-}
+// NOTE: methods must follow these patterns, otherwise tests could not find possible issues:
+// Converters createEntity to entity: Convert<ENTITY>Create
+// Converters updateEntity to entity: Convert<ENTITY>Update
+// Converters override fields entity: OverrideNotEditableFor<ENTITY>
 
 // goverter:converter
 // goverter:output:file ./generated/openapi_converter.gen.go
@@ -73,13 +52,13 @@ type OpenAPIConverter interface {
 	// Ignore all fields that ARE editable
 	// goverter:default InitRegisteredModelWithUpdate
 	// goverter:autoMap Existing
-	// goverter:ignore Id CreateTimeSinceEpoch LastUpdateTimeSinceEpoch Description ExternalID CustomProperties
+	// goverter:ignore Id CreateTimeSinceEpoch LastUpdateTimeSinceEpoch Description ExternalID CustomProperties State
 	OverrideNotEditableForRegisteredModel(source OpenapiUpdateWrapper[openapi.RegisteredModel]) (openapi.RegisteredModel, error)
 
 	// Ignore all fields that ARE editable
 	// goverter:default InitModelVersionWithUpdate
 	// goverter:autoMap Existing
-	// goverter:ignore Id CreateTimeSinceEpoch LastUpdateTimeSinceEpoch Description ExternalID CustomProperties
+	// goverter:ignore Id CreateTimeSinceEpoch LastUpdateTimeSinceEpoch Description ExternalID CustomProperties State
 	OverrideNotEditableForModelVersion(source OpenapiUpdateWrapper[openapi.ModelVersion]) (openapi.ModelVersion, error)
 
 	// Ignore all fields that ARE editable
@@ -105,46 +84,4 @@ type OpenAPIConverter interface {
 	// goverter:autoMap Existing
 	// goverter:ignore Id CreateTimeSinceEpoch LastUpdateTimeSinceEpoch Description ExternalID CustomProperties LastKnownState
 	OverrideNotEditableForServeModel(source OpenapiUpdateWrapper[openapi.ServeModel]) (openapi.ServeModel, error)
-}
-
-func InitRegisteredModelWithUpdate(source OpenapiUpdateWrapper[openapi.RegisteredModel]) openapi.RegisteredModel {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.RegisteredModel{}
-}
-
-func InitModelVersionWithUpdate(source OpenapiUpdateWrapper[openapi.ModelVersion]) openapi.ModelVersion {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.ModelVersion{}
-}
-
-func InitModelArtifactWithUpdate(source OpenapiUpdateWrapper[openapi.ModelArtifact]) openapi.ModelArtifact {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.ModelArtifact{}
-}
-
-func InitServingEnvironmentWithUpdate(source OpenapiUpdateWrapper[openapi.ServingEnvironment]) openapi.ServingEnvironment {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.ServingEnvironment{}
-}
-
-func InitInferenceServiceWithUpdate(source OpenapiUpdateWrapper[openapi.InferenceService]) openapi.InferenceService {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.InferenceService{}
-}
-
-func InitServeModelWithUpdate(source OpenapiUpdateWrapper[openapi.ServeModel]) openapi.ServeModel {
-	if source.Update != nil {
-		return *source.Update
-	}
-	return openapi.ServeModel{}
 }
