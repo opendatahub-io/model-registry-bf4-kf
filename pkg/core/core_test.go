@@ -63,7 +63,7 @@ func TestRunCoreTestSuite(t *testing.T) {
 	suite.Run(t, &coreTestSuite)
 }
 
-// befor each test case
+// before each test case
 func (suite *CoreTestSuite) SetupTest() {
 	// initialize test variable before each test
 	ascOrderDirection = "ASC"
