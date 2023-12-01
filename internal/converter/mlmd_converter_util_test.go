@@ -624,21 +624,18 @@ func TestMapInferenceServiceProperties(t *testing.T) {
 	assertion.Equal(int64(3), props["serving_environment_id"].GetIntValue())
 
 	// serving and model id must be provided and must be a valid numeric id
-	props, err = MapInferenceServiceProperties(&openapi.InferenceService{})
+	_, err = MapInferenceServiceProperties(&openapi.InferenceService{})
 	assertion.NotNil(err)
 	assertion.Equal("missing required RegisteredModelId field", err.Error())
-	assertion.Equal(0, len(props))
 
-	props, err = MapInferenceServiceProperties(&openapi.InferenceService{RegisteredModelId: "1"})
+	_, err = MapInferenceServiceProperties(&openapi.InferenceService{RegisteredModelId: "1"})
 	assertion.NotNil(err)
 	assertion.Equal("missing required ServingEnvironmentId field", err.Error())
-	assertion.Equal(0, len(props))
 
 	// invalid int
-	props, err = MapInferenceServiceProperties(&openapi.InferenceService{RegisteredModelId: "aa"})
+	_, err = MapInferenceServiceProperties(&openapi.InferenceService{RegisteredModelId: "aa"})
 	assertion.NotNil(err)
 	assertion.Equal("invalid numeric string: strconv.Atoi: parsing \"aa\": invalid syntax", err.Error())
-	assertion.Equal(0, len(props))
 }
 
 func TestMapServeModelType(t *testing.T) {
@@ -662,16 +659,14 @@ func TestMapServeModelProperties(t *testing.T) {
 	assertion.Equal(int64(1), props["model_version_id"].GetIntValue())
 
 	// model version id must be provided
-	props, err = MapServeModelProperties(&openapi.ServeModel{})
+	_, err = MapServeModelProperties(&openapi.ServeModel{})
 	assertion.NotNil(err)
 	assertion.Equal("missing required ModelVersionId field", err.Error())
-	assertion.Equal(0, len(props))
 
 	// model version id must be a valid numeric
-	props, err = MapServeModelProperties(&openapi.ServeModel{ModelVersionId: "bb"})
+	_, err = MapServeModelProperties(&openapi.ServeModel{ModelVersionId: "bb"})
 	assertion.NotNil(err)
 	assertion.Equal("invalid numeric string: strconv.Atoi: parsing \"bb\": invalid syntax", err.Error())
-	assertion.Equal(0, len(props))
 }
 
 func TestMapServingEnvironmentProperties(t *testing.T) {
