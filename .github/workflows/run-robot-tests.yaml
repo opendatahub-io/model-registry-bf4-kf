@@ -54,7 +54,9 @@ jobs:
       # Run Robot Framework tests against running docker compose
       - name: Run Robot Framework tests
         # Run Robot Framework tests from test/robot directory
-        run: robot test/robot
+        run: | 
+          robot test/robot
+          TEST_MODE=Python robot test/robot/MRandLogicalModel.robot
       # Shutdown docker compose with locally build image from current code
       - name: Shutdown docker compose with local image
         # Shutdown docker compose running in the background
