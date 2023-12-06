@@ -26,12 +26,12 @@ def plain_wrapper(request) -> MLMDStore:
     print("Assuming this is Model Registry clients/python directory:", request.config.rootdir)
     model_registry_root_dir = model_registry_root(request)
     print("Assuming this is the Model Registry root directory:", model_registry_root_dir)
-    sqlite_db_file = model_registry_root_dir + '/test/config/ml-metadata/metadata.sqlite.db'
+    sqlite_db_file = f'{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db'
     if os.path.exists(sqlite_db_file):
         raise FileExistsError(f"The file {sqlite_db_file} already exists; make sure to cancel it before running these tests.")
     container = DockerContainer("gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0")
     container.with_exposed_ports(8080)
-    container.with_volume_mapping(model_registry_root_dir + '/test/config/ml-metadata/', '/tmp/shared', 'rw')
+    container.with_volume_mapping(f'{model_registry_root_dir}/test/config/ml-metadata/', '/tmp/shared', 'rw')
     container.with_env('METADATA_STORE_SERVER_CONFIG_FILE', '/tmp/shared/conn_config.pb')
     container.start()
     wait_for_logs(container, "Server listening on")
@@ -66,7 +66,7 @@ def model_registry_root(request):
 @pytest.fixture(autouse=True)
 def plain_wrapper_after_each(request, plain_wrapper: MLMDStore):
     model_registry_root_dir = model_registry_root(request)
-    sqlite_db_file = model_registry_root_dir + '/test/config/ml-metadata/metadata.sqlite.db'
+    sqlite_db_file = f'{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db'
     def teardown():
         os.system(f'rm {sqlite_db_file}')
         print("plain_wrapper_after_each done.")
