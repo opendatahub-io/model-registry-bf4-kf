@@ -60,7 +60,7 @@ def plain_wrapper(request) -> MLMDStore:
 
 
 def model_registry_root(request):
-    return request.config.rootdir + '/../..'
+    return (request.config.rootpath / '../..').resolve()  # resolves to absolute path
 
 
 @pytest.fixture(autouse=True)
