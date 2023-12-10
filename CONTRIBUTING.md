@@ -91,7 +91,7 @@ This allows for instance with [VSCode DevContainer extension](https://code.visua
 The experience is very similar to when on GitHub.com you press dot `.` and you get a VSCode "inside something", except it is local to your machine.
 It's not super fast because x86 is emulated via Rosetta, but works "good enough" to complete most tasks without requiring remote connection to a real x86 server.
 
-For non-VSCode user but leveraging LSPs, an SDK is available as well on the upstream: https://containers.dev.
+To use DevContainer as a framework directly, a command-line tool and an SDK is available as well on the upstream project: https://containers.dev.
 
 Don't forget you will need a Docker context for x86 emulation, for instance with colima (see previous step) this can be achieved with:
 
