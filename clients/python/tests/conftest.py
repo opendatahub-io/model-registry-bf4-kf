@@ -1,44 +1,43 @@
+import os
+import time
 from typing import Union
 
 import pytest
+from ml_metadata import errors, metadata_store
 from ml_metadata.proto import (
     ArtifactType,
-    ConnectionConfig,
     ContextType,
     metadata_store_pb2,
 )
-from ml_metadata import errors
-from ml_metadata import metadata_store
 from ml_metadata.proto.metadata_store_pb2 import MetadataStoreClientConfig
 from model_registry.core import ModelRegistryAPIClient
 from model_registry.store.wrapper import MLMDStore
 from model_registry.types import ModelArtifact, ModelVersion, RegisteredModel
-import os
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
-import time
 
 ProtoTypeType = Union[ArtifactType, ContextType]
 
-
-@pytest.fixture(scope='session')
+# ruff: noqa: PT021 supported
+@pytest.fixture(scope="session")
 def plain_wrapper(request) -> MLMDStore:
     print("Assuming this is Model Registry clients/python directory:", request.config.rootdir)
     model_registry_root_dir = model_registry_root(request)
     print("Assuming this is the Model Registry root directory:", model_registry_root_dir)
-    sqlite_db_file = f'{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db'
+    sqlite_db_file = f"{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db"
     if os.path.exists(sqlite_db_file):
-        raise FileExistsError(f"The file {sqlite_db_file} already exists; make sure to cancel it before running these tests.")
+        msg = f"The file {sqlite_db_file} already exists; make sure to cancel it before running these tests."
+        raise FileExistsError(msg)
     container = DockerContainer("gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0")
     container.with_exposed_ports(8080)
-    container.with_volume_mapping(f'{model_registry_root_dir}/test/config/ml-metadata/', '/tmp/shared', 'rw')
-    container.with_env('METADATA_STORE_SERVER_CONFIG_FILE', '/tmp/shared/conn_config.pb')
+    container.with_volume_mapping(f"{model_registry_root_dir}/test/config/ml-metadata/", "/tmp/shared", "rw") # noqa this is file target in container
+    container.with_env("METADATA_STORE_SERVER_CONFIG_FILE", "/tmp/shared/conn_config.pb") # noqa this is target in container
     container.start()
     wait_for_logs(container, "Server listening on")
-    os.system('docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a')
+    os.system('docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a') # noqa governed test
     print("waited for logs and port")
     cfg = MetadataStoreClientConfig()
-    cfg.host = 'localhost'
+    cfg.host = "localhost"
     cfg.port = int(container.get_exposed_port(8080))
     print(cfg)
 
@@ -46,7 +45,7 @@ def plain_wrapper(request) -> MLMDStore:
     # removing this callback might result in mlmd container shutting down before the tests had chance to fully run,
     # and resulting in grpc connection resets.
     def teardown():
-        os.system(f'rm {model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db')
+        os.system(f"rm {model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db") # noqa governed test
         print("teardown")
         container.stop()
 
@@ -56,19 +55,19 @@ def plain_wrapper(request) -> MLMDStore:
     store = metadata_store.MetadataStore(cfg)
     wait_for_grpc(container, store)
 
-    return MLMDStore(cfg) 
+    return MLMDStore(cfg)
 
 
 def model_registry_root(request):
-    return (request.config.rootpath / '../..').resolve()  # resolves to absolute path
+    return (request.config.rootpath / "../..").resolve()  # resolves to absolute path
 
 
 @pytest.fixture(autouse=True)
-def plain_wrapper_after_each(request, plain_wrapper: MLMDStore):
+def _plain_wrapper_after_each(request, plain_wrapper: MLMDStore):
     model_registry_root_dir = model_registry_root(request)
-    sqlite_db_file = f'{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db'
+    sqlite_db_file = f"{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db"
     def teardown():
-        os.system(f'rm {sqlite_db_file}')
+        os.system(f"rm {sqlite_db_file}") # noqa governed test
         print("plain_wrapper_after_each done.")
 
     request.addfinalizer(teardown)
@@ -145,7 +144,7 @@ def wait_for_grpc(container: DockerContainer, store: metadata_store.MetadataStor
             print(e)
             stdout = container.get_logs()
             print(stdout)
-        if results != None:
+        if results is not None:
             return duration
         if timeout and duration > timeout:
             raise TimeoutError("wait_for_grpc not ready %.3f seconds"
