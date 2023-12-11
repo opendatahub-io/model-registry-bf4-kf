@@ -45,7 +45,7 @@ def plain_wrapper(request) -> MLMDStore:
     # removing this callback might result in mlmd container shutting down before the tests had chance to fully run,
     # and resulting in grpc connection resets.
     def teardown():
-        os.system(f"rm {model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db") # noqa governed test
+        os.system(f"rm {sqlite_db_file}") # noqa governed test
         print("teardown")
         container.stop()
 
