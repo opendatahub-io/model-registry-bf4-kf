@@ -24,8 +24,8 @@ def plain_wrapper(request) -> MLMDStore:
     print("Assuming this is Model Registry clients/python directory:", request.config.rootdir)
     model_registry_root_dir = model_registry_root(request)
     print("Assuming this is the Model Registry root directory:", model_registry_root_dir)
-    sqlite_db_file = f"{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db"
-    if os.path.exists(sqlite_db_file):
+    sqlite_db_file = model_registry_root_dir / "test/config/ml-metadata/metadata.sqlite.db"
+    if sqlite_db_file.exists():
         msg = f"The file {sqlite_db_file} already exists; make sure to cancel it before running these tests."
         raise FileExistsError(msg)
     container = DockerContainer("gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0")
