@@ -21,7 +21,6 @@ ProtoTypeType = Union[ArtifactType, ContextType]
 # ruff: noqa: PT021 supported
 @pytest.fixture(scope="session")
 def plain_wrapper(request) -> MLMDStore:
-    print("Assuming this is Model Registry clients/python directory:", request.config.rootdir)
     model_registry_root_dir = model_registry_root(request)
     print("Assuming this is the Model Registry root directory:", model_registry_root_dir)
     sqlite_db_file = model_registry_root_dir / "test/config/ml-metadata/metadata.sqlite.db"
