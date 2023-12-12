@@ -23,13 +23,14 @@ ProtoTypeType = Union[ArtifactType, ContextType]
 def plain_wrapper(request) -> MLMDStore:
     model_registry_root_dir = model_registry_root(request)
     print("Assuming this is the Model Registry root directory:", model_registry_root_dir)
-    sqlite_db_file = model_registry_root_dir / "test/config/ml-metadata/metadata.sqlite.db"
+    shared_volume = model_registry_root_dir / "test/config/ml-metadata"
+    sqlite_db_file = shared_volume / "metadata.sqlite.db"
     if sqlite_db_file.exists():
         msg = f"The file {sqlite_db_file} already exists; make sure to cancel it before running these tests."
         raise FileExistsError(msg)
     container = DockerContainer("gcr.io/tfx-oss-public/ml_metadata_store_server:1.14.0")
     container.with_exposed_ports(8080)
-    container.with_volume_mapping(f"{model_registry_root_dir}/test/config/ml-metadata/", "/tmp/shared", "rw") # noqa this is file target in container
+    container.with_volume_mapping(shared_volume, "/tmp/shared", "rw") # noqa this is file target in container
     container.with_env("METADATA_STORE_SERVER_CONFIG_FILE", "/tmp/shared/conn_config.pb") # noqa this is target in container
     container.start()
     wait_for_logs(container, "Server listening on")
