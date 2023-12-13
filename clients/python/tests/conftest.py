@@ -64,8 +64,7 @@ def model_registry_root(request):
 
 @pytest.fixture(autouse=True)
 def _plain_wrapper_after_each(request, plain_wrapper: MLMDStore):
-    model_registry_root_dir = model_registry_root(request)
-    sqlite_db_file = f"{model_registry_root_dir}/test/config/ml-metadata/metadata.sqlite.db"
+    sqlite_db_file = model_registry_root(request) / "test/config/ml-metadata/metadata.sqlite.db
     def teardown():
         os.system(f"rm {sqlite_db_file}") # noqa governed test
         print("plain_wrapper_after_each done.")
