@@ -139,10 +139,9 @@ def wait_for_grpc(container: DockerContainer, store: metadata_store.MetadataStor
         try:
             results = store.get_contexts()
         except errors.UnavailableError as e:
-            print("Container not ready. Retrying...")
             print(e)
-            stdout = container.get_logs()
-            print(stdout)
+            print("Container logs:\n", container.get_logs())
+            print("Container not ready. Retrying...")
         if results is not None:
             return duration
         if timeout and duration > timeout:
