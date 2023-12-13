@@ -45,9 +45,8 @@ def plain_wrapper(request) -> MLMDStore:
     # removing this callback might result in mlmd container shutting down before the tests had chance to fully run,
     # and resulting in grpc connection resets.
     def teardown():
-        os.system(f"rm {sqlite_db_file}") # noqa governed test
-        print("teardown")
         container.stop()
+        print("teardown of plain_wrapper completed.")
 
     request.addfinalizer(teardown)
 
@@ -66,7 +65,11 @@ def model_registry_root(request):
 def _plain_wrapper_after_each(request, plain_wrapper: MLMDStore):
     sqlite_db_file = model_registry_root(request) / "test/config/ml-metadata/metadata.sqlite.db"
     def teardown():
-        os.system(f"rm {sqlite_db_file}") # noqa governed test
+        try:
+            os.remove(sqlite_db_file)
+            print(f"Removed {sqlite_db_file} successfully.")
+        except Exception as e:
+            print(f"An error occurred while removing {sqlite_db_file}: {e}")
         print("plain_wrapper_after_each done.")
 
     request.addfinalizer(teardown)
