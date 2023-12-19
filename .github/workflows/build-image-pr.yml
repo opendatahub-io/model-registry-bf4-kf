@@ -38,13 +38,11 @@ jobs:
         uses: helm/kind-action@v1.4.0
       - name: Load Local Registry Test Image
         env:
-          IMG_VERSION: ${{ steps.tags.outputs.tag }}
           IMG: "quay.io/opendatahub/model-registry:${{ steps.tags.outputs.tag }}"
         run: |
           kind load docker-image -n chart-testing ${IMG}
       - name: Deploy Operator With Test Image
         env:
-          IMG_VERSION: ${{ steps.tags.outputs.tag }}
           IMG: "quay.io/opendatahub/model-registry:${{ steps.tags.outputs.tag }}"
         run: |
           echo "Deploying operator from model-registry-operator branch ${BRANCH}"
