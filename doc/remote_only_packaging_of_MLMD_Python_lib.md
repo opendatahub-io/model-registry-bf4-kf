@@ -12,7 +12,9 @@ The server exposes a gRPC interface, and is only distributed for x86-64 architec
 It is embedded in the client's wheel binary, providing an additional convenience [method for running the server locally (in memory)](https://www.tensorflow.org/tfx/guide/mlmd#metadata_storage_backends_and_store_connection_configuration), 
 whilst also making it [architecture specific](https://pypi.org/project/ml-metadata/1.14.0/#files).
 
-Our Model Registry (MR) [project](https://docs.google.com/document/d/1G-pjdGaS2kLELsB5kYk_D4AmH-fTfnCnJOhJ8xENjx0/edit?usp=sharing) is built on top of MLMD. The Go implementation interfaces with the MLMD server via gRPC, typically available as a Docker container. The [MR python client](https://github.com/opendatahub-io/model-registry/tree/main/clients/python#readme) wraps MLMD python library, especially for reusing types (Context, Artifact, etc) and for the gRPC connection methods.
+The [Model Registry project](https://docs.google.com/document/d/1G-pjdGaS2kLELsB5kYk_D4AmH-fTfnCnJOhJ8xENjx0/edit?usp=sharing) (MR) is built on top of MLMD.
+The Go implementation interfaces with the MLMD server via gRPC, typically available as a Docker container.
+The [MR Python client](https://github.com/opendatahub-io/model-registry/tree/main/clients/python#readme) wraps the MLMD client.
 
 The fact that the MLMD python wheel is platform/architecture specific poses some challenges, for example:
 
