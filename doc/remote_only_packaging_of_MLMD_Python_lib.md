@@ -7,7 +7,10 @@ Authors:
 
 ## Context and Problem statement
 
-Google’s ML Metadata (MLMD) is a project composed of a cpp server, and a python client library. The cpp code is compiled and distributed only for specific architectures; the resulting binary executable of the MLMD server exposes a gRPC interface. The MLMD python wheel/library is not distributed as a pure library, but embeds the compiled cpp server as a binary executable inside of the python wheel, making the resulting MLMD python wheel as well [platform/architecture specific](https://pypi.org/project/ml-metadata/1.14.0/#files). The reason for embedding the cpp server binary executable in the python wheel of MLMD is to provide [a convenient method for running the server “locally”](https://www.tensorflow.org/tfx/guide/mlmd#metadata_storage_backends_and_store_connection_configuration) (without Docker etc) to the end-user of the python library, while still supporting the [option for gRPC connections](https://www.tensorflow.org/tfx/guide/mlmd#use_mlmd_with_a_remote_grpc_server) to remote MLMD servers.
+Google’s ML Metadata (MLMD) is a project composed of a C++ server, and a Python client library.
+The server exposes a gRPC interface, and is only distributed for x86-64 architectures.
+It is embedded in the client's wheel binary, providing an additional convenience [method for running the server locally (in memory)](https://www.tensorflow.org/tfx/guide/mlmd#metadata_storage_backends_and_store_connection_configuration), 
+whilst also making it [architecture specific](https://pypi.org/project/ml-metadata/1.14.0/#files).
 
 Our Model Registry (MR) [project](https://docs.google.com/document/d/1G-pjdGaS2kLELsB5kYk_D4AmH-fTfnCnJOhJ8xENjx0/edit?usp=sharing) is built on top of MLMD. The Go implementation interfaces with the MLMD server via gRPC, typically available as a Docker container. The [MR python client](https://github.com/opendatahub-io/model-registry/tree/main/clients/python#readme) wraps MLMD python library, especially for reusing types (Context, Artifact, etc) and for the gRPC connection methods.
 
