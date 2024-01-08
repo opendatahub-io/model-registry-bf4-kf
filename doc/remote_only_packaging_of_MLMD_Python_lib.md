@@ -106,6 +106,7 @@ Cons:
 * Google code (copyright header) is mixed with Model Registry code
     * at this stage is not clear if any implications with uplifting the MR project in KF community
 * The resulting artifact cannot be re-used by other communities/users
+* If one day upstream Google MLMD resolves to be platform/arch agnostic, changing back the MR python client to use the original ml-metadata could require extra work and effort
 
 
 ## Conclusion
