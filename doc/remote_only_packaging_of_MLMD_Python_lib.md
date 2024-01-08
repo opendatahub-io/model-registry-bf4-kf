@@ -16,10 +16,8 @@ The [Model Registry project](https://docs.google.com/document/d/1G-pjdGaS2kLELsB
 The Go implementation interfaces with the MLMD server via gRPC, typically available as a Docker container.
 The [MR Python client](https://github.com/opendatahub-io/model-registry/tree/main/clients/python#readme) wraps the MLMD client.
 
-The fact that the MLMD python wheel is platform/architecture specific poses some challenges, for example:
-
-* It makes **development of Model Registry** difficult for contributors using Apple-silicon Macs, or for contributors from ARM-based computers.
-* It also makes the **Model Registry python client** deployable only on the same specific platform/architecture where Google's MLMD wheel has been actually distributed for (e.g.: might be difficult to deploy MR client on ARM, due to the MLMD dependency not being natively available for ARM).
+As the MLMD client is architecture specific, so is the MR Python client, which **severely limits the targets it can run on**, as it only supports x86-64.
+This **poses many challenges to contributors** using other CPU architectures, specially ARM, as that's become more prevalent in recent years.
 
 Since the Model Registry python client does _not_ leverage the embedded MLMD server's in-memory connection, we present options for a “soft-fork” and re-distribution of the MLMD client as a pure Python library, making it platform/architecture agnostic.
 
