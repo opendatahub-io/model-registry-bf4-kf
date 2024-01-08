@@ -21,7 +21,7 @@ The fact that the MLMD python wheel is platform/architecture specific poses some
 * It makes **development of Model Registry** difficult for contributors using Apple-silicon Macs, or for contributors from ARM-based computers.
 * It also makes the **Model Registry python client** deployable only on the same specific platform/architecture where Google's MLMD wheel has been actually distributed for (e.g.: might be difficult to deploy MR client on ARM, due to the MLMD dependency not being natively available for ARM).
 
-Since the Model Registry python client does _not_ leverage as a capability the embedded MLMD server of the python wheel, this documents discusses options for a “soft-fork” and re-distribution of the MLMD python wheel to be only supporting remote gRPC connections while at the same time becoming a “pure library” and platform/architecture agnostic.
+Since the Model Registry python client does _not_ leverage the embedded MLMD server's in-memory connection, we present options for a “soft-fork” and re-distribution of the MLMD client as a pure Python library, making it platform/architecture agnostic.
 
 The resulting artifact, a MLMD python wheel supporting only remote gRPC connections at the same time being a “pure library” hence not requiring specific CPU architectures, OSes, or CPython versions, could be as well published on PyPI under the ODH org, and become the dependency of [MR python client](/clients/python/README.md).
 
