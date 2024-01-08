@@ -1,10 +1,5 @@
 # Remote-only packaging of MLMD Python lib
 
-Authors: 
-- Matteo Mortari
-- Isabella do Amaral
-- and by extension the MR team
-
 ## Context and Problem statement
 
 Google’s ML Metadata (MLMD) is a project composed of a C++ server, and a Python client library.
@@ -38,7 +33,11 @@ The resulting artifact, a MLMD python wheel supporting only remote gRPC connecti
 
 ## Proposed solution
 
-Will consider adopting either of the alternatives below.
+Refer to the conclusions section for the motivations behind selecting:
+1. soft-fork upstream repo, modify pip+bazel build, to produce the distributable Python client ("Alternative B", below)
+2. create a `ml-metadata-remote` or similarly named package on PyPI based on the distributable wheel and files from the step1 above ("Packaging Option1", below)
+
+For documentation purposes, the exploration of the different alternatives is reported below.
 
 
 ## Alternative A: repackage the resulting wheel
@@ -80,7 +79,7 @@ The resulting artifact has been [tested](https://github.com/tarilabs/ml-metadata
 In this section we consider packaging and delivery options for the resulting artifact from the alternative selected above.
 
 
-### Option1: separate repo on ODH
+### Packaging Option1: separate repo on ODH
 
 This delivery option considers having a separate repo on ODH, called “ml-metadata-remote” (or the likes). Repeat the exercise from the alternative selected above on this repo. Then deliver this as a package on PyPI.
 
@@ -96,7 +95,7 @@ Cons:
 * Additional artifact to publish on PyPI
 
 
-### Option2: mix resulting artifact inside Model Registry repo
+### Packaging Option2: mix resulting artifact inside Model Registry repo
 
 This delivery option considers placing the resulting artifact by executing the exercise from the alternative selected above and placing it directly inside the Model Registry repo, with the python client source [location](https://github.com/opendatahub-io/model-registry/tree/main/clients/python). (for analogy, this is similar to “shading”/”uberjar” in Java world for those familiar with the concept)
 
@@ -116,7 +115,7 @@ Cons:
 
 Based on analysis of the alternatives provided, we decided to further pursue:
 - the repackaging by **Alternative B** because makes it actually easier to demonstrate the steps and modifications required using as baseline the upstream repo.
-- the distribution by **Option1** because it will make it easier to "revert" to the upstream `ml-metadata` dependency if upstream will publish for all architectues, OSes, etc. and as the pros outweight considered cons.
+- the distribution by **Pacakging Option1** because it will make it easier to "revert" to the upstream `ml-metadata` dependency if upstream will publish for all architectues, OSes, etc. and as the pros outweight considered cons.
 
 MR python client [tests](https://github.com/opendatahub-io/model-registry/blob/259b39320953bf05942dcec1fb5ec74f7eb5d4a7/clients/python/tests/conftest.py#L19) should be rewritten using Testcontainers, and not leveraging the embedded server (already done with [this PR](https://github.com/opendatahub-io/model-registry/pull/225)).
 
