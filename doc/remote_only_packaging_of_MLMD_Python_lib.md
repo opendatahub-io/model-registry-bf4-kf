@@ -115,7 +115,7 @@ Cons:
 
 Based on analysis of the alternatives provided, we decided to further pursue:
 - the repackaging by **Alternative B** because makes it actually easier to demonstrate the steps and modifications required using as baseline the upstream repo.
-- the distribution by **Pacakging Option1** because it will make it easier to "revert" to the upstream `ml-metadata` dependency if upstream will publish for all architectues, OSes, etc. and as the pros outweight considered cons.
+- the distribution by **Packaging Option1** because it will make it easier to "revert" to the upstream `ml-metadata` dependency if upstream will publish for all architectures, OSes, etc. and as the pros outweight considered cons.
 
 MR python client [tests](https://github.com/opendatahub-io/model-registry/blob/259b39320953bf05942dcec1fb5ec74f7eb5d4a7/clients/python/tests/conftest.py#L19) should be rewritten using Testcontainers, and not leveraging the embedded server (already done with [this PR](https://github.com/opendatahub-io/model-registry/pull/225)).
 
