@@ -169,6 +169,78 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (api.ModelRegistryApi,
 	}, nil
 }
 
+// NewModelRegistryService creates a new instance of the ModelRegistryService, initializing it with the provided gRPC client connection.
+//
+// Parameters:
+//   - cc: A gRPC client connection to the underlying MLMD service
+//   - typesMap: user-supplied context and artifact typeIds to be used
+func NewModelRegistryServicesUsingTypesMap(cc grpc.ClientConnInterface, typesMap map[string]int64) (api.ModelRegistryApi, error) {
+	client := proto.NewMetadataStoreServiceClient(cc)
+	return &ModelRegistryService{
+		mlmdClient:  client,
+		typesMap:    typesMap,
+		openapiConv: &generated.OpenAPIConverterImpl{},
+		mapper:      mapper.NewMapper(typesMap),
+	}, nil
+}
+
+func BuildTypesMap(cc grpc.ClientConnInterface) (map[string]int64, error) {
+	client := proto.NewMetadataStoreServiceClient(cc)
+
+	registeredModelContextTypeReq := proto.GetContextTypeRequest{
+		TypeName: registeredModelTypeName,
+	}
+	registeredModelResp, err := client.GetContextType(context.Background(), &registeredModelContextTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting context type %s: %v", *registeredModelTypeName, err)
+	}
+	modelVersionContextTypeReq := proto.GetContextTypeRequest{
+		TypeName: modelVersionTypeName,
+	}
+	modelVersionResp, err := client.GetContextType(context.Background(), &modelVersionContextTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting context type %s: %v", *modelVersionTypeName, err)
+	}
+	modelArtifactArtifactTypeReq := proto.GetArtifactTypeRequest{
+		TypeName: modelArtifactTypeName,
+	}
+	modelArtifactResp, err := client.GetArtifactType(context.Background(), &modelArtifactArtifactTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting artifact type %s: %v", *modelArtifactTypeName, err)
+	}
+	servingEnvironmentContextTypeReq := proto.GetContextTypeRequest{
+		TypeName: servingEnvironmentTypeName,
+	}
+	servingEnvironmentResp, err := client.GetContextType(context.Background(), &servingEnvironmentContextTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting context type %s: %v", *servingEnvironmentTypeName, err)
+	}
+	inferenceServiceContextTypeReq := proto.GetContextTypeRequest{
+		TypeName: inferenceServiceTypeName,
+	}
+	inferenceServiceResp, err := client.GetContextType(context.Background(), &inferenceServiceContextTypeReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting context type %s: %v", *inferenceServiceTypeName, err)
+	}
+	serveModelExecutionReq := proto.GetExecutionTypeRequest{
+		TypeName: serveModelTypeName,
+	}
+	serveModelResp, err := client.GetExecutionType(context.Background(), &serveModelExecutionReq)
+	if err != nil {
+		return nil, fmt.Errorf("error getting execution type %s: %v", *serveModelTypeName, err)
+	}
+
+	typesMap := map[string]int64{
+		constants.RegisteredModelTypeName:    registeredModelResp.ContextType.GetId(),
+		constants.ModelVersionTypeName:       modelVersionResp.ContextType.GetId(),
+		constants.ModelArtifactTypeName:      modelArtifactResp.ArtifactType.GetId(),
+		constants.ServingEnvironmentTypeName: servingEnvironmentResp.ContextType.GetId(),
+		constants.InferenceServiceTypeName:   inferenceServiceResp.ContextType.GetId(),
+		constants.ServeModelTypeName:         serveModelResp.ExecutionType.GetId(),
+	}
+	return typesMap, nil
+}
+
 // REGISTERED MODELS
 
 // UpsertRegisteredModel creates a new registered model if the given registered model's ID is nil,
