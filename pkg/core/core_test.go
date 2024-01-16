@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/opendatahub-io/model-registry/internal/constants"
 	"github.com/opendatahub-io/model-registry/internal/converter"
 	"github.com/opendatahub-io/model-registry/internal/ml_metadata/proto"
 	"github.com/opendatahub-io/model-registry/internal/testutils"
@@ -690,6 +691,53 @@ func (suite *CoreTestSuite) TestGetRegisteredModelById() {
 	suite.Nilf(err, "error getting registered model by id %s: %v", *createdModel.Id, err)
 
 	// checks created model matches original one except for Id
+	suite.Equal(*registeredModel.Name, *getModelById.Name, "saved model name should match the original one")
+	suite.Equal(*registeredModel.ExternalID, *getModelById.ExternalID, "saved model external id should match the original one")
+	suite.Equal(*registeredModel.State, *getModelById.State, "saved model state should match the original one")
+	suite.Equal(*registeredModel.CustomProperties, *getModelById.CustomProperties, "saved model custom props should match the original one")
+}
+
+func (suite *CoreTestSuite) TestConnectionSupplyingTypes() {
+	// first pass establishing connection to create types by default
+	_ = suite.setupModelRegistryService()
+
+	// (re-)build connection using existing typeIds
+	typesMap, err := BuildTypesMap(suite.grpcConn)
+	suite.Nilf(err, "error building typesMap: %v", err)
+	// check the typesMap contains all expected entries
+	suite.Contains(typesMap, constants.RegisteredModelTypeName)
+	suite.Contains(typesMap, constants.ModelVersionTypeName)
+	suite.Contains(typesMap, constants.ModelArtifactTypeName)
+	suite.Contains(typesMap, constants.ServingEnvironmentTypeName)
+	suite.Contains(typesMap, constants.InferenceServiceTypeName)
+	suite.Contains(typesMap, constants.ServeModelTypeName)
+	// re-build connection by supplying typesMap
+	apiSvc, err := NewModelRegistryServicesUsingTypesMap(suite.grpcConn, typesMap)
+	suite.Nilf(err, "error building typesMap: %v", err)
+	service := apiSvc.(*ModelRegistryService)
+
+	// smoke test by upserting and getting RegisteredModel
+	state := openapi.REGISTEREDMODELSTATE_LIVE
+	registeredModel := &openapi.RegisteredModel{
+		Name:       &modelName,
+		ExternalID: &modelExternalId,
+		State:      &state,
+		CustomProperties: &map[string]openapi.MetadataValue{
+			"owner": {
+				MetadataStringValue: &openapi.MetadataStringValue{
+					StringValue: &owner,
+				},
+			},
+		},
+	}
+
+	createdModel, err := service.UpsertRegisteredModel(registeredModel)
+	suite.Nilf(err, "error creating registered model: %v", err)
+
+	getModelById, err := service.GetRegisteredModelById(*createdModel.Id)
+	suite.Nilf(err, "error getting registered model by id %s: %v", *createdModel.Id, err)
+
+	// checks created model matches original one except for Id which is mantained on creation
 	suite.Equal(*registeredModel.Name, *getModelById.Name, "saved model name should match the original one")
 	suite.Equal(*registeredModel.ExternalID, *getModelById.ExternalID, "saved model external id should match the original one")
 	suite.Equal(*registeredModel.State, *getModelById.State, "saved model state should match the original one")
