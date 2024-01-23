@@ -40,7 +40,7 @@ type ModelRegistryService struct {
 // Parameters:
 //   - cc: A gRPC client connection to the underlying MLMD service
 func NewModelRegistryService(cc grpc.ClientConnInterface) (api.ModelRegistryApi, error) {
-	typesMap, err := GetTypeIdsIntoTypesMap(cc)
+	typesMap, err := BuildTypesMap(cc)
 	if err != nil { // early return in case type Ids cannot be retrieved
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func NewModelRegistryService(cc grpc.ClientConnInterface) (api.ModelRegistryApi,
 	}, nil
 }
 
-func GetTypeIdsIntoTypesMap(cc grpc.ClientConnInterface) (map[string]int64, error) {
+func BuildTypesMap(cc grpc.ClientConnInterface) (map[string]int64, error) {
 	client := proto.NewMetadataStoreServiceClient(cc)
 
 	registeredModelContextTypeReq := proto.GetContextTypeRequest{
