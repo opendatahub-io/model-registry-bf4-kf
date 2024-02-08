@@ -17,7 +17,7 @@ make_post_extract_id() {
 }
 
 # TODO: finalize using openshift-ci values.
-OCP_CLUSTER_NAME="rosa.mmortari-rosa-h.w0x4.p3.openshiftapps.com"
+OCP_CLUSTER_NAME="PROVIDE OCP CLUSTER NAME FOR OPENSHIFT-CI"
 MR_NAMESPACE="shared-modelregistry-ns"
 MR_HOSTNAME="http://modelregistry-sample-http-$MR_NAMESPACE.apps.$OCP_CLUSTER_NAME"
 
