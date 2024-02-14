@@ -100,7 +100,7 @@ class ModelRegistry:
             storage_path: Storage path.
             service_account_name: Service account name.
             metadata: Additional version metadata. Defaults to values returned by `default_metadata()`.
-        
+
         Returns:
             Registered model.
         """
@@ -123,9 +123,9 @@ class ModelRegistry:
         )
 
         return rm
-    
+
     def default_metadata(self) -> dict[str, ScalarType]:
-        """Default metadata valorisations
+        """Default metadata valorisations.
 
         When not explicitly supplied by the end users, these valorisations will be used
         by default.
@@ -134,7 +134,7 @@ class ModelRegistry:
             default metadata valorisations.
         """
         return {
-            key: os.environ[key] for key in ['AWS_S3_ENDPOINT', 'AWS_S3_BUCKET', 'AWS_DEFAULT_REGION'] if key in os.environ
+            key: os.environ[key] for key in ["AWS_S3_ENDPOINT", "AWS_S3_BUCKET", "AWS_DEFAULT_REGION"] if key in os.environ
         }
 
     def register_hf_model(

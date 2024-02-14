@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 from model_registry import ModelRegistry
 from model_registry.core import ModelRegistryAPIClient
 from model_registry.exceptions import StoreException
@@ -90,7 +91,7 @@ def test_default_md(mr_client: ModelRegistry):
     assert (mv := mr_client.get_model_version(name, version))
     assert mv.metadata == env_values
 
-    for k in env_values.keys():
+    for k in env_values:
         os.environ.pop(k)
 
 
@@ -127,7 +128,7 @@ def test_hf_import_default_env(mr_client: ModelRegistry):
     env_values = {"AWS_S3_ENDPOINT": "value1", "AWS_S3_BUCKET": "value2", "AWS_DEFAULT_REGION": "value3"}
     for k, v in env_values.items():
         os.environ[k] = v
-    
+
     assert mr_client.register_hf_model(
         name,
         "onnx/decoder_model.onnx",
@@ -143,5 +144,5 @@ def test_hf_import_default_env(mr_client: ModelRegistry):
     assert mv.metadata["repo"] == name
     assert mr_client.get_model_artifact(name, version)
 
-    for k in env_values.keys():
+    for k in env_values:
         os.environ.pop(k)
