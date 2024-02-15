@@ -34,9 +34,9 @@ COPY cmd/ cmd/
 COPY api/ api/
 COPY internal/ internal/
 COPY pkg/ pkg/
-# COPY scripts/ scripts/
-# COPY patches/ patches/
-# COPY templates/ templates/
+COPY scripts/ scripts/
+COPY patches/ patches/
+COPY templates/ templates/
 
 # Build
 USER root
