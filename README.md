@@ -1,4 +1,8 @@
-# Model Registry
+# This repository is archived! Moved to https://github.com/kubeflow/model-registry. 
+# Please DO NOT DELETE as there is additional work to be moved (MLMD Go prototype)
+
+
+# Model Registry 
 
 ![build checks status](https://github.com/opendatahub-io/model-registry/actions/workflows/build.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/github/opendatahub-io/model-registry/graph/badge.svg?token=61URLQA3VS)](https://codecov.io/github/opendatahub-io/model-registry)
